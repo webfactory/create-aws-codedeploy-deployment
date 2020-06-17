@@ -87,9 +87,6 @@ branch_config:
             serviceRoleArn: arn:aws:iam::1234567890:role/CodeDeployStagingRole
             ec2TagFilters:
                 - { Type: KEY_AND_VALUE, Key: hostname, Value: phobos.stage }
-        deploymentConfig:
-            autoRollbackConfiguration:
-                enabled: false
 ```
   
 The purpose of the `branch_config` section is to tell the action how to configure CodeDeploy Deployment Groups and Deployments, based on the
