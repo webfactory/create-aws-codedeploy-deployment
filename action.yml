@@ -1,5 +1,5 @@
 name: 'webfactory/create-aws-codedeploy-deployment'
-description: 'Really useful'
+description: 'An Action to deploy GitHub repos with AWS CodeDeploy'
 inputs:
     application:
         description: 'AWS CodeDeploy application name; defaults to short repository name'
@@ -13,3 +13,7 @@ outputs:
 runs:
     using: 'node12'
     main: 'dist/index.js'
+
+branding:
+    icon: cast
+    color: orange
