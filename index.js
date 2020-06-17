@@ -69,6 +69,7 @@ function fetchBranchConfig(branchName) {
             console.log(`🎯 Created deployment group '${deploymentGroupName}'`);
             core.setOutput('deploymentGroupCreated', true);
         } else {
+            core.setFailed(`🌩 Unhandled exception`);
             throw e;
         }
     }
@@ -112,6 +113,7 @@ function fetchBranchConfig(branchName) {
                 }
                 continue;
             } else {
+                core.setFailed(`🌩 Unhandled exception`);
                 throw e;
             }
         }
