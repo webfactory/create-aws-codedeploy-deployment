@@ -1,4 +1,6 @@
-# `create-aws-codedeploy-deployment` GitHub Action
+# ![webfactory Logo](https://www.webfactory.de/bundles/webfactorytwiglayout/img/logo.png) `create-aws-codedeploy-deployment` 
+
+## An Action to deploy GitHub repos with AWS CodeDeploy
 
 This action creates [AWS CodeDeploy](https://aws.amazon.com/codedeploy/) deployments from your GitHub Actions workflow. Deployment Group and Deployment configuration itself are derived from an additional configuration section in `.appspec.yml`.
 
@@ -147,11 +149,9 @@ As a note to my future self, in order to work on this repo:
 
 ## Credits, Copyright and License
 
-This action was written by webfactory GmbH, Bonn, Germany. We're a software development
-agency with a focus on PHP (mostly [Symfony](http://github.com/symfony/symfony)). We're big
-fans of automation, DevOps, CI and CD, and we're happily using the AWS platform for more than 10 years now.
+This action was written by webfactory GmbH, Bonn, Germany. We're a software development agency with a focus on PHP (mostly [Symfony](http://github.com/symfony/symfony)). We're big fans of automation, DevOps, CI and CD, and we're happily using the AWS platform for more than 10 years now.
 
-If you're a developer looking for new challenges, we'd like to hear from you! 
+If you're a developer looking for new challenges, we'd like to hear from you! Otherwise, if this Action is useful for you, add a ⭐️.
 
 - <https://www.webfactory.de>
 - <https://twitter.com/webfactory>
