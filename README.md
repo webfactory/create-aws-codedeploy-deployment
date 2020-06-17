@@ -109,19 +109,45 @@ The only addition made will be that the `revision` parameter for `CreateDeployme
 
 ## Usage
 
-0. The basic CodeDeploy setup, including the creation of Service Roles, IAM credentials with sufficient permissions and installation of the
- CodeDeploy Agent on your target hosts is outside the scope of this action. Follow [the documentation](https://docs.aws.amazon.com/codedeploy/latest/userguide/getting-started-codedeploy.html).
-1. [Create a CodeDeploy Application](https://docs.aws.amazon.com/codedeploy/latest/userguide/applications-create.html) that corresponds to your
- repository. By default, this action will assume your application is named by the "short" repository name (so, `myapp` for a `myorg/myapp` GitHub
-  repository), but you can also pass the application name as an input to the action.
-2. Connect your CodeDeploy Application with your repository following [these instructions](https://docs.aws.amazon.com/codedeploy/latest/userguide/deployments-create-cli-github.html).
-3. Configure the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action in your workflow and
- provide the necessary IAM credentials as secrets. 
-4. Add the `branch_config` section to your `appspec.yml` file to map branches to Deployment Groups and their configuration. In the above example, the  
-`master` and `.*` sub-sections show the minimal configuration required.
-5. Add `uses: webfactory/create-aws-codedeploy-deployment@v0.1.0` as a step to your workflow file. If you want to use the action's outputs, you
- will also need to provide an `id` for the step.
- 
+0. The basic CodeDeploy setup, including the creation of Service Roles, IAM credentials with sufficient permissions and installation of the CodeDeploy Agent on your target hosts is outside the scope of this action. Follow [the documentation](https://docs.aws.amazon.com/codedeploy/latest/userguide/getting-started-codedeploy.html).
+1. [Create a CodeDeploy Application](https://docs.aws.amazon.com/codedeploy/latest/userguide/applications-create.html) that corresponds to your repository. By default, this action will assume your application is named by the "short" repository name (so, `myapp` for a `myorg/myapp` GitHub repository), but you can also pass the application name as an input to the action.
+2. Connect your CodeDeploy Application with your repository following [these instructions(https://docs.aws.amazon.com/codedeploy/latest/userguide/deployments-create-cli-github.html).
+3. Configure the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action in your workflow and provide the necessary IAM credentials as secrets. See the section below for the necessary IAM permissions.
+4. Add the `branch_config` section to your `appspec.yml` file to map branches to Deployment Groups and their configuration. In the above example, the  `master` and `.*` sub-sections show the minimal configuration required.
+5. Add `uses: webfactory/create-aws-codedeploy-deployment@v0.1.0` as a step to your workflow file. If you want to use the action's outputs, you will also need to provide an `id` for the step.
+
+### AWS IAM Permissions
+
+The IAM User that is used to run the action requires the following IAM permissions. Note that depending on your policies you might want to specify narrower Resource ARNs, that is, more specifically tailor the permission to one particular repository and/or application.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "iam:PassRole",
+                "codedeploy:GetDeployment",
+                "codedeploy:GetApplicationRevision",
+                "codedeploy:CreateDeployment",
+                "codedeploy:RegisterApplicationRevision",
+                "codedeploy:GetDeploymentConfig",
+                "codedeploy:UpdateDeploymentGroup",
+                "codedeploy:CreateDeploymentGroup"
+            ],
+            "Resource": [
+                "arn:aws:iam::{your_account_id}:role/{your_codedeploy_service_role}",
+                "arn:aws:codedeploy:eu-central-1:{your_account_id}:deploymentconfig:*",
+                "arn:aws:codedeploy:eu-central-1:{your_account_id}:deploymentgroup:*/*",
+                "arn:aws:codedeploy:eu-central-1:{your_account_id}:application:*"
+            ]
+        }
+    ]
+}
+```
+
 ## Action Input and Output Parameters
 
 ### Input
