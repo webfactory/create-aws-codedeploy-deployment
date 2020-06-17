@@ -1,6 +1,7 @@
-# ![webfactory Logo](https://www.webfactory.de/bundles/webfactorytwiglayout/img/logo.png) `create-aws-codedeploy-deployment` 
+![webfactory Logo](https://www.webfactory.de/bundles/webfactorytwiglayout/img/logo.png) 
 
-## An Action to deploy GitHub repos with AWS CodeDeploy
+# `create-aws-codedeploy-deployment`
+### An Action to deploy GitHub repos with AWS CodeDeploy
 
 This action creates [AWS CodeDeploy](https://aws.amazon.com/codedeploy/) deployments from your GitHub Actions workflow. Deployment Group and Deployment configuration itself are derived from an additional configuration section in `.appspec.yml`.
 
