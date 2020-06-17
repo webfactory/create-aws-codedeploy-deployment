@@ -1,0 +1,15 @@
+name: 'webfactory/create-aws-codedeploy-deployment'
+description: 'Really useful'
+inputs:
+    application:
+        description: 'AWS CodeDeploy application name; defaults to short repository name'
+outputs:
+    deploymentId:
+        description: AWS CodeDeployment Deployment-ID of the deployment created
+    deploymentGroupName:
+        description: AWS CodeDeployment Deployment Group name used
+    deploymentGroupCreated:
+        description: True, if a new deployment group was created; false if an already existing group was used.
+runs:
+    using: 'node12'
+    main: 'dist/index.js'
