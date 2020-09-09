@@ -20,7 +20,7 @@
     try {
         await git.init();
         const remotes = await git.getRemotes(true);
-        var defaultApplicationName, defaultFullRepositoryName;
+        var applicationName, fullRepositoryName;
 
         for (const remote of remotes) {
             if (remote.name !== 'origin') {
@@ -31,9 +31,9 @@
 
             var matches
 
-            if (matches = url.match(/git@github.com:([\w-]+)\/([\w-]+).git/)) {
-                defaultApplicationName = matches[2];
-                defaultFullRepositoryName = `${matches[1]}/${matches[2]}`;
+            if (matches = url.match(/git@github.com:([a-z0-9_-]+)\/([a-z0-9_-]+).git/)) {
+                applicationName = matches[2];
+                fullRepositoryName = `${matches[1]}/${matches[2]}`;
             }
         }
 
@@ -43,8 +43,14 @@
         core.setFailed('🌩  Failed to parse git information. Are you sure this is a git repo?')
     }
 
-    console.log('🚂 OK, let\'s ship this...');
-    console.log(`On branch 🎋  ${branchName}, commit ⚙️  ${commitId}`);
+    if (!applicationName || !fullRepositoryName) {
+        core.setFailed("❓ Unable to parse GitHub repository name from the 'origin' remote.");
+    }
+
+    console.log("🚂 OK, let's ship this...");
+    console.log(`GitHub 💎 repository '${fullRepositoryName}'`);
+    console.log(`Branch 🎋 ${branchName}`);
+    console.log(`Commit ⚙️  ${commitId}`);
 
     const prompt = require('prompt');
 
@@ -52,22 +58,22 @@
     prompt.start();
 
     try {
-        const { applicationName, fullRepositoryName } = await prompt.get({
+        /* const { applicationName, fullRepositoryName } = */ await prompt.get({
             properties: {
-                applicationName: {
+/*                applicationName: {
                     description: "CodeDeploy application name",
                     pattern: /^[a-z0-9\._+=,@\-]{1,100}$/,
                     message: 'Invalid CodeDeploy application name.',
                     required: true,
-                    default: defaultApplicationName,
+                    default: applicationName,
                 },
                 fullRepositoryName: {
                     description: 'Full repository name, like "octocat/example"',
                     pattern: /^[a-z0-9-]+\/[a-z0-9-]+$/,
                     message: 'Invalid repository name.',
                     required: true,
-                    default: defaultFullRepositoryName,
-                },
+                    default: fullRepositoryName,
+                }, */
                 confirm: {
                     name: 'yes',
                     message: 'Type "yes" to create deployment',
