@@ -7,7 +7,9 @@
     "@actions/core": "^1.2.4",
     "@actions/github": "^2.2.0",
     "aws-sdk": "^2.677.0",
-    "js-yaml": "^3.14.0"
+    "js-yaml": "^3.14.0",
+    "prompt": "https://github.com/flatiron/prompt#8d5495c84c3f433b8f26ea2798f8ba68c3656459",
+    "simple-git": "^2.20.1"
   },
   "devDependencies": {
     "@zeit/ncc": "^0.22.3"
