@@ -8,6 +8,11 @@
         process.exit(1);
     }
 
+    const fs = require('fs');
+    if (!fs.existsSync('./appspec.yml')) {
+        core.setFailed("❓ ./appspec.yml does not exist. Make sure you are in the project's top level directory.");
+    }
+
     const simpleGit = require('simple-git');
     const git = simpleGit();
     var branchName, commitId;
