@@ -1697,7 +1697,9 @@ AWS.EC2MetadataCredentials = AWS.util.inherit(AWS.Credentials, {
     const branchName = isPullRequest ? payload.pull_request.head.ref : payload.ref.replace(/^refs\/heads\//, ''); // like "my/branch_name"
     console.log(`🎋 On branch '${branchName}', head commit ${commitId}`);
 
-    action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
+    try {
+        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
+    } catch (e) {}
 })();
 
 
@@ -10283,7 +10285,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 currentDeploymentGroupName: deploymentGroupName
             }
         }).promise();
-        console.log(`⚙️ Updated deployment group '${deploymentGroupName}'`);
+        console.log(`⚙️  Updated deployment group '${deploymentGroupName}'`);
         core.setOutput('deploymentGroupCreated', false);
     } catch (e) {
         if (e.code == 'DeploymentGroupDoesNotExistException') {
@@ -10297,7 +10299,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
             console.log(`🎯 Created deployment group '${deploymentGroupName}'`);
             core.setOutput('deploymentGroupCreated', true);
         } else {
-            core.setFailed(`🌩 Unhandled exception`);
+            core.setFailed(`🌩  Unhandled exception`);
             throw e;
         }
     }
@@ -10341,7 +10343,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 }
                 continue;
             } else {
-                core.setFailed(`🌩 Unhandled exception`);
+                core.setFailed(`🌩  Unhandled exception`);
                 throw e;
             }
         }
@@ -10354,6 +10356,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
         console.log('🥳 Deployment successful');
     } catch (e) {
         core.setFailed(`😱 The deployment ${deploymentId} seems to have failed.`);
+        throw e;
     }
 }
 

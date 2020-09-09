@@ -57,7 +57,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
             console.log(`🎯 Created deployment group '${deploymentGroupName}'`);
             core.setOutput('deploymentGroupCreated', true);
         } else {
-            core.setFailed(`🌩 Unhandled exception`);
+            core.setFailed(`🌩  Unhandled exception`);
             throw e;
         }
     }
@@ -101,7 +101,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 }
                 continue;
             } else {
-                core.setFailed(`🌩 Unhandled exception`);
+                core.setFailed(`🌩  Unhandled exception`);
                 throw e;
             }
         }
@@ -114,5 +114,6 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
         console.log('🥳 Deployment successful');
     } catch (e) {
         core.setFailed(`😱 The deployment ${deploymentId} seems to have failed.`);
+        throw e;
     }
 }

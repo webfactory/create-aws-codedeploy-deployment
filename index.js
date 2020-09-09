@@ -14,5 +14,7 @@
     const branchName = isPullRequest ? payload.pull_request.head.ref : payload.ref.replace(/^refs\/heads\//, ''); // like "my/branch_name"
     console.log(`🎋 On branch '${branchName}', head commit ${commitId}`);
 
-    action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
+    try {
+        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
+    } catch (e) {}
 })();

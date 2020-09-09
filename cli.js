@@ -5,12 +5,13 @@
     core.setOutput = function () {};
     core.setFailed = function (message) {
         console.log(message instanceof Error ? message.toString() : message);
-        process.exit(1);
+        process.exitCode = 1;
     }
 
     const fs = require('fs');
     if (!fs.existsSync('./appspec.yml')) {
         core.setFailed("❓ ./appspec.yml does not exist. Make sure you are in the project's top level directory.");
+        process.exit();
     }
 
     const simpleGit = require('simple-git');
@@ -41,10 +42,12 @@
         commitId = await git.revparse(['HEAD']);
     } catch (e) {
         core.setFailed('🌩  Failed to parse git information. Are you sure this is a git repo?')
+        process.exit();
     }
 
     if (!applicationName || !fullRepositoryName) {
         core.setFailed("❓ Unable to parse GitHub repository name from the 'origin' remote.");
+        process.exit();
     }
 
     console.log("🚂 OK, let's ship this...");
@@ -83,11 +86,16 @@
                 }
             }
         });
-
-        const action = require('./create-deployment');
-        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
     } catch (e) {
         core.setFailed('🙈  Aborted.');
+        process.exit();
     }
 
+    const action = require('./create-deployment');
+    try {
+        await action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
+    } catch (e) {
+        console.log(`👉🏻 ${e.message}`);
+        process.exit(1);
+    }
 })();
