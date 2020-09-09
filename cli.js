@@ -52,7 +52,7 @@
     prompt.start();
 
     try {
-        const {applicationName, fullRepositoryName} = await prompt.get({
+        const { applicationName, fullRepositoryName } = await prompt.get({
             properties: {
                 applicationName: {
                     description: "CodeDeploy application name",
@@ -77,10 +77,11 @@
                 }
             }
         });
+
+        const action = require('./create-deployment');
+        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
     } catch (e) {
         core.setFailed('🙈  Aborted.');
     }
 
-    const action = require('./create-deployment');
-    action.createDeployment(applicationName, fullRepositoryName, branchName, commitId);
 })();

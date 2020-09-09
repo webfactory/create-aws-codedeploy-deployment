@@ -43,7 +43,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 currentDeploymentGroupName: deploymentGroupName
             }
         }).promise();
-        console.log(`⚙️ Updated deployment group '${deploymentGroupName}'`);
+        console.log(`⚙️  Updated deployment group '${deploymentGroupName}'`);
         core.setOutput('deploymentGroupCreated', false);
     } catch (e) {
         if (e.code == 'DeploymentGroupDoesNotExistException') {
