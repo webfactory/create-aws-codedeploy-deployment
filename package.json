@@ -1,5 +1,6 @@
 {
   "main": "index.js",
+  "version": "0.1.0",
   "scripts": {
     "build": "ncc build index.js -o dist"
   },
