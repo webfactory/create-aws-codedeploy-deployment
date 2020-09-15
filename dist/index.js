@@ -157,6 +157,9 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
     const branchName = isPullRequest ? payload.pull_request.head.ref : payload.ref.replace(/^refs\/heads\//, ''); // like "my/branch_name"
     console.log(`🎋 On branch '${branchName}', head commit ${commitId}`);
 
+    const runNumber = process.env['github_run_number'] || process.env['GITHUB_RUN_NUMBER'];
+    console.log("Run-ID", runNumber);
+
     try {
         action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
     } catch (e) {}
