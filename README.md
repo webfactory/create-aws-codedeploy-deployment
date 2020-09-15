@@ -43,7 +43,7 @@ jobs:
                     aws-region: eu-central-1
             -   uses: actions/checkout@v2
             -   id: deploy
-                uses: webfactory/create-aws-codedeploy-deployment@v0.1.0
+                uses: webfactory/create-aws-codedeploy-deployment@v0.2.1
             -   uses: peter-evans/commit-comment@v1
                 with:
                     token: ${{ secrets.GITHUB_TOKEN }}
