@@ -73,24 +73,26 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
         }
 
         if (runNumber) {
-            var {deploymentGroupInfo: {lastAttemptedDeployment: {deploymentId: lastAttemptedDeploymentId}}} = await codeDeploy.getDeploymentGroup({
+            var {deploymentGroupInfo: {lastAttemptedDeployment: {deploymentId: lastAttemptedDeploymentId} = {}}} = await codeDeploy.getDeploymentGroup({
                 applicationName: applicationName,
                 deploymentGroupName: deploymentGroupName,
             }).promise();
 
-            var {deploymentInfo: {description: lastAttemptedDeploymentDescription}} = await codeDeploy.getDeployment({
-                deploymentId: lastAttemptedDeploymentId,
-            }).promise();
+            if (lastAttemptedDeploymentId) {
+                var {deploymentInfo: {description: lastAttemptedDeploymentDescription}} = await codeDeploy.getDeployment({
+                    deploymentId: lastAttemptedDeploymentId,
+                }).promise();
 
-            var matches, lastAttemptedDeploymentRunNumber;
+                var matches, lastAttemptedDeploymentRunNumber;
 
-            if (matches = lastAttemptedDeploymentDescription.match(/run_number=(\d+)/)) {
-                lastAttemptedDeploymentRunNumber = matches[1];
-                if (parseInt(lastAttemptedDeploymentRunNumber) > parseInt(runNumber)) {
-                    core.setFailed(`🙅‍♂️ The last attempted deployment as returned by the AWS API has been created by a higher run number ${lastAttemptedDeploymentRunNumber}, this is run number ${runNumber}. Aborting.`);
-                    return;
-                } else {
-                    console.log(`🔎 Last attempted deployment was from run number ${lastAttemptedDeploymentRunNumber}, this is run number ${runNumber} - proceeding.`);
+                if (matches = lastAttemptedDeploymentDescription.match(/run_number=(\d+)/)) {
+                    lastAttemptedDeploymentRunNumber = matches[1];
+                    if (parseInt(lastAttemptedDeploymentRunNumber) > parseInt(runNumber)) {
+                        core.setFailed(`🙅‍♂️ The last attempted deployment as returned by the AWS API has been created by a higher run number ${lastAttemptedDeploymentRunNumber}, this is run number ${runNumber}. Aborting.`);
+                        return;
+                    } else {
+                        console.log(`🔎 Last attempted deployment was from run number ${lastAttemptedDeploymentRunNumber}, this is run number ${runNumber} - proceeding.`);
+                    }
                 }
             }
 
