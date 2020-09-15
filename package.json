@@ -13,6 +13,6 @@
     "simple-git": "^2.20.1"
   },
   "devDependencies": {
-    "@zeit/ncc": "^0.22.3"
+    "@vercel/ncc": "^0.24"
   }
 }

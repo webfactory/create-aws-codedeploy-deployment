@@ -165,7 +165,7 @@ The IAM User that is used to run the action requires the following IAM permissio
 As a note to my future self, in order to work on this repo:
 
 * Clone it
-* Run `npm install` to fetch dependencies
+* Run `yarn install` to fetch dependencies
 * _hack hack hack_
 * Run `npm run build` to update `dist/*`, which holds the files actually run
 * Read https://help.github.com/en/articles/creating-a-javascript-action if unsure.

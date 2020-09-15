@@ -61,22 +61,8 @@
     prompt.start();
 
     try {
-        /* const { applicationName, fullRepositoryName } = */ await prompt.get({
+        await prompt.get({
             properties: {
-/*                applicationName: {
-                    description: "CodeDeploy application name",
-                    pattern: /^[a-z0-9\._+=,@\-]{1,100}$/,
-                    message: 'Invalid CodeDeploy application name.',
-                    required: true,
-                    default: applicationName,
-                },
-                fullRepositoryName: {
-                    description: 'Full repository name, like "octocat/example"',
-                    pattern: /^[a-z0-9-]+\/[a-z0-9-]+$/,
-                    message: 'Invalid repository name.',
-                    required: true,
-                    default: fullRepositoryName,
-                }, */
                 confirm: {
                     name: 'yes',
                     message: 'Type "yes" to create deployment',
