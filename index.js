@@ -15,9 +15,8 @@
     console.log(`🎋 On branch '${branchName}', head commit ${commitId}`);
 
     const runNumber = process.env['github_run_number'] || process.env['GITHUB_RUN_NUMBER'];
-    console.log("Run-ID", runNumber);
 
     try {
-        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
+        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, runNumber, core);
     } catch (e) {}
 })();

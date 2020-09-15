@@ -134,6 +134,7 @@ The IAM User that is used to run the action requires the following IAM permissio
                 "codedeploy:CreateDeployment",
                 "codedeploy:RegisterApplicationRevision",
                 "codedeploy:GetDeploymentConfig",
+                "codedeploy:GetDeploymentGroup",
                 "codedeploy:UpdateDeploymentGroup",
                 "codedeploy:CreateDeploymentGroup"
             ],
@@ -147,6 +148,16 @@ The IAM User that is used to run the action requires the following IAM permissio
     ]
 }
 ```
+
+## Race Conditions
+
+As of writing, the AWS CodeDeploy API does not accept new deployment requests for an application and deployment group as long as another deployment is still in progress. So, this action will retry a few times and eventually (hopefully) succeed.
+
+There might be situations where several workflow runs are triggered in quick succession - for example, when merging several approved pull requests in a short time. Since your test suites or workflow runs might take a varying amount of time to finish and to reach the deployment phase (_this_ action), you cannot be sure that the triggered deployments will happen in the order you merged the pull requests (to stick with the example). You could not even be sure that the last deployment made was based on the last commit in your repository.
+
+To work around this, this action includes the GitHub Actions "[run id](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#github-context)" in the `description` field for created deployments. Before creating a new deployment, it will fetch the _last attempted deployment_ from the AWS API and compare its run id with the current run. If the current run has a _lower_ id than the last attempted deployment, the deployment will be aborted.
+
+This workaround should catch a good share of possible out-of-order deployments. There is a slight chance for mishaps, however: If a _newer_ deployment happens to start _after_ we checked the run id and finishes _before_ we commence our own deployment (just a few lines of code later), this might go unnoticed. To really prevent this from happening, ordering deployments probably needs to be supported on the AWS API side, see https://github.com/aws/aws-codedeploy-agent/issues/248.
 
 ## Action Input and Output Parameters
 

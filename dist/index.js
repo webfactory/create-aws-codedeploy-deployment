@@ -39,7 +39,7 @@ function fetchBranchConfig(branchName) {
     process.exit();
 }
 
-exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, commitId, core) {
+exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, commitId, runNumber, core) {
     const branchConfig = fetchBranchConfig(branchName);
     const safeBranchName = branchName.replace(/[^a-z0-9-/]+/gi, '-').replace(/\/+/, '--');
     const deploymentGroupName = branchConfig.deploymentGroupName ? branchConfig.deploymentGroupName.replace('$BRANCH', safeBranchName) : safeBranchName;
@@ -79,11 +79,44 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
     }
 
     let tries = 0;
+    const description = runNumber ? `Created by webfactory/create-aws-codedeploy-deployment (run_number=${runNumber})` : '';
+
     while (true) {
 
         if (++tries > 5) {
             core.setFailed('🤥 Unable to create a new deployment (too much concurrency?)');
             return;
+        }
+
+        if (runNumber) {
+            var {deploymentGroupInfo: {lastAttemptedDeployment: {deploymentId: lastAttemptedDeploymentId}}} = await codeDeploy.getDeploymentGroup({
+                applicationName: applicationName,
+                deploymentGroupName: deploymentGroupName,
+            }).promise();
+
+            var {deploymentInfo: {description: lastAttemptedDeploymentDescription}} = await codeDeploy.getDeployment({
+                deploymentId: lastAttemptedDeploymentId,
+            }).promise();
+
+            var matches, lastAttemptedDeploymentRunNumber;
+
+            if (matches = lastAttemptedDeploymentDescription.match(/run_number=(\d+)/)) {
+                lastAttemptedDeploymentRunNumber = matches[1];
+                if (parseInt(lastAttemptedDeploymentRunNumber) > parseInt(runNumber)) {
+                    core.setFailed(`🙅‍♂️ The last attempted deployment as returned by the AWS API has been created by a higher run number ${lastAttemptedDeploymentRunNumber}, this is run number ${runNumber}. Aborting.`);
+                    return;
+                } else {
+                    console.log(`🔎 Last attempted deployment was from run number ${lastAttemptedDeploymentRunNumber}, this is run number ${runNumber} - proceeding.`);
+                }
+            }
+
+            /*
+                There's a slight remaining chance that the above check does not suffice: If we just
+                passed the check, but another (newer) build creates AND finishes a deployment
+                BEFORE we reach the next lines, an out-of-order deployment might happen. This is a
+                race condition that requires an extension on the AWS API side in order to be resolved,
+                see https://github.com/aws/aws-codedeploy-agent/issues/248.
+             */
         }
 
         try {
@@ -92,6 +125,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 ...{
                     applicationName: applicationName,
                     deploymentGroupName: deploymentGroupName,
+                    description: description,
                     revision: {
                         revisionType: 'GitHub',
                         gitHubLocation: {
@@ -158,10 +192,9 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
     console.log(`🎋 On branch '${branchName}', head commit ${commitId}`);
 
     const runNumber = process.env['github_run_number'] || process.env['GITHUB_RUN_NUMBER'];
-    console.log("Run-ID", runNumber);
 
     try {
-        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, core);
+        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, runNumber, core);
     } catch (e) {}
 })();
 
