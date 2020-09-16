@@ -60,7 +60,8 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
             }
         }).promise();
         console.log(`⚙️  Updated deployment group '${deploymentGroupName}'`);
-        core.setOutput('deploymentGroupCreated', false);
+
+        core.setOutput('deploymentGroupCreated', 0);
     } catch (e) {
         if (e.code == 'DeploymentGroupDoesNotExistException') {
             await codeDeploy.createDeploymentGroup({
@@ -71,7 +72,8 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 }
             }).promise();
             console.log(`🎯 Created deployment group '${deploymentGroupName}'`);
-            core.setOutput('deploymentGroupCreated', true);
+
+            core.setOutput('deploymentGroupCreated', 1);
         } else {
             core.setFailed(`🌩  Unhandled exception`);
             throw e;
