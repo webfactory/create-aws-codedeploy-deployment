@@ -169,7 +169,9 @@ This workaround should catch a good share of possible out-of-order deployments. 
 
 * `deploymentId`: AWS CodeDeployment Deployment-ID of the deployment created
 * `deploymentGroupName`: AWS CodeDeployment Deployment Group name used
-* `deploymentGroupCreated`: True, if a new deployment group was created. False, if an existing group was updated.
+* `deploymentGroupCreated`: `1`, if a new deployment group was created; `0` if an existing group was updated.
+
+You can use the expression `if: steps.<your-deployment-step>.outputs.deploymentGroupCreated==true` (or `...==false`) on subsequent workflow steps to run actions only if the deployment created a new deployment group (or updated an existing deployment, respectively).
 
 ## Hacking
 
