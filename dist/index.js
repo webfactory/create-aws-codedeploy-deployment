@@ -103,7 +103,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
 
                 var matches, lastAttemptedDeploymentRunNumber;
 
-                if (matches = lastAttemptedDeploymentDescription.match(/run_number=(\d+)/)) {
+                if (lastAttemptedDeploymentDescription && (matches = lastAttemptedDeploymentDescription.match(/run_number=(\d+)/))) {
                     lastAttemptedDeploymentRunNumber = matches[1];
                     if (parseInt(lastAttemptedDeploymentRunNumber) > parseInt(runNumber)) {
                         core.setFailed(`🙅‍♂️ The last attempted deployment as returned by the AWS API has been created by a higher run number ${lastAttemptedDeploymentRunNumber}, this is run number ${runNumber}. Aborting.`);
