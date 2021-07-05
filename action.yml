@@ -3,6 +3,9 @@ description: 'An Action to deploy GitHub repos with AWS CodeDeploy'
 inputs:
     application:
         description: 'AWS CodeDeploy application name; defaults to short repository name'
+    skip-sequence-check:
+        description: 'When set, skip the check making sure no earlier workflow results are deployed'
+        default: false
 outputs:
     deploymentId:
         description: AWS CodeDeployment Deployment-ID of the deployment created

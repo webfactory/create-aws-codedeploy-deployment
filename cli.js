@@ -79,7 +79,7 @@
 
     const action = require('./create-deployment');
     try {
-        await action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, null, core);
+        await action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, null, null, core);
     } catch (e) {
         console.log(`👉🏻 ${e.message}`);
         process.exit(1);

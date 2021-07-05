@@ -12,11 +12,14 @@
     const isPullRequest = payload.pull_request !== undefined;
     const commitId = isPullRequest ? payload.pull_request.head.sha : payload.head_commit.id; // like "ec26c3e57ca3a959ca5aad62de7213c562f8c821"
     const branchName = isPullRequest ? payload.pull_request.head.ref : payload.ref.replace(/^refs\/heads\//, ''); // like "my/branch_name"
+
+    const skipSequenceCheck = core.getBooleanInput('skip-sequence-check');
+
     console.log(`🎋 On branch '${branchName}', head commit ${commitId}`);
 
     const runNumber = process.env['github_run_number'] || process.env['GITHUB_RUN_NUMBER'];
 
     try {
-        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, runNumber, core);
+        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, runNumber, skipSequenceCheck, core);
     } catch (e) {}
 })();

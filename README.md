@@ -164,6 +164,7 @@ This workaround should catch a good share of possible out-of-order deployments. 
 ### Input
 
 * `application`: The name of the CodeDeploy Application to work with. Defaults to the "short" repo name.
+* `skip-sequence-check`: When set to `true`, do not attempt to make sure deployments happen in order. Use this when the workflow count has been reset or changed to a lower value; possible cause is renaming the workflow file.
 
 ### Outputs
 
