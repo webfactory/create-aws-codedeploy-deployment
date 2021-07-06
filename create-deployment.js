@@ -23,7 +23,7 @@ function fetchBranchConfig(branchName) {
     process.exit();
 }
 
-exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, commitId, runNumber, core) {
+exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, commitId, runNumber, skipSequenceCheck, core) {
     const branchConfig = fetchBranchConfig(branchName);
     const safeBranchName = branchName.replace(/[^a-z0-9-/]+/gi, '-').replace(/\/+/, '--');
     const deploymentGroupName = branchConfig.deploymentGroupName ? branchConfig.deploymentGroupName.replace('$BRANCH', safeBranchName) : safeBranchName;
@@ -74,7 +74,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
             return;
         }
 
-        if (runNumber) {
+        if (!skipSequenceCheck && runNumber) {
             var {deploymentGroupInfo: {lastAttemptedDeployment: {deploymentId: lastAttemptedDeploymentId} = {}}} = await codeDeploy.getDeploymentGroup({
                 applicationName: applicationName,
                 deploymentGroupName: deploymentGroupName,
