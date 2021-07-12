@@ -213,14 +213,27 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.issue = exports.issueCommand = void 0;
 const os = __importStar(__webpack_require__(2087));
 const utils_1 = __webpack_require__(5278);
 /**
@@ -299,6 +312,25 @@ function escapeProperty(s) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -308,14 +340,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 const command_1 = __webpack_require__(7351);
 const file_command_1 = __webpack_require__(717);
 const utils_1 = __webpack_require__(5278);
@@ -382,7 +408,9 @@ function addPath(inputPath) {
 }
 exports.addPath = addPath;
 /**
- * Gets the value of an input.  The value is also trimmed.
+ * Gets the value of an input.
+ * Unless trimWhitespace is set to false in InputOptions, the value is also trimmed.
+ * Returns an empty string if the value is not defined.
  *
  * @param     name     name of the input to get
  * @param     options  optional. See InputOptions.
@@ -393,9 +421,49 @@ function getInput(name, options) {
     if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
     }
+    if (options && options.trimWhitespace === false) {
+        return val;
+    }
     return val.trim();
 }
 exports.getInput = getInput;
+/**
+ * Gets the values of an multiline input.  Each value is also trimmed.
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   string[]
+ *
+ */
+function getMultilineInput(name, options) {
+    const inputs = getInput(name, options)
+        .split('\n')
+        .filter(x => x !== '');
+    return inputs;
+}
+exports.getMultilineInput = getMultilineInput;
+/**
+ * Gets the input value of the boolean type in the YAML 1.2 "core schema" specification.
+ * Support boolean input list: `true | True | TRUE | false | False | FALSE` .
+ * The return value is also in boolean type.
+ * ref: https://yaml.org/spec/1.2/spec.html#id2804923
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   boolean
+ */
+function getBooleanInput(name, options) {
+    const trueValue = ['true', 'True', 'TRUE'];
+    const falseValue = ['false', 'False', 'FALSE'];
+    const val = getInput(name, options);
+    if (trueValue.includes(val))
+        return true;
+    if (falseValue.includes(val))
+        return false;
+    throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}\n` +
+        `Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
+}
+exports.getBooleanInput = getBooleanInput;
 /**
  * Sets the value of an output.
  *
@@ -404,6 +472,7 @@ exports.getInput = getInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    process.stdout.write(os.EOL);
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;
@@ -545,14 +614,27 @@ exports.getState = getState;
 "use strict";
 
 // For internal use, subject to change.
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.issueCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__webpack_require__(5747));
@@ -583,6 +665,7 @@ exports.issueCommand = issueCommand;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.toCommandValue = void 0;
 /**
  * Sanitizes an input into a string so it can be passed into issueCommand safely
  * @param input input to sanitize into a string
@@ -1202,7 +1285,9 @@ class HttpClient {
                 maxSockets: maxSockets,
                 keepAlive: this._keepAlive,
                 proxy: {
-                    proxyAuth: `${proxyUrl.username}:${proxyUrl.password}`,
+                    ...((proxyUrl.username || proxyUrl.password) && {
+                        proxyAuth: `${proxyUrl.username}:${proxyUrl.password}`
+                    }),
                     host: proxyUrl.hostname,
                     port: proxyUrl.port
                 }
@@ -1806,7 +1891,7 @@ function withDefaults(oldDefaults, newDefaults) {
   });
 }
 
-const VERSION = "6.0.10";
+const VERSION = "6.0.12";
 
 const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`; // DEFAULTS has all properties set that EndpointOptions has, except url.
 // So we use RequestParameters and add method as additional required property.
@@ -1843,7 +1928,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 var request = __webpack_require__(6234);
 var universalUserAgent = __webpack_require__(5030);
 
-const VERSION = "4.5.8";
+const VERSION = "4.6.4";
 
 class GraphqlError extends Error {
   constructor(request, response) {
@@ -1866,10 +1951,18 @@ class GraphqlError extends Error {
 }
 
 const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query", "mediaType"];
+const FORBIDDEN_VARIABLE_OPTIONS = ["query", "method", "url"];
 const GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
 function graphql(request, query, options) {
-  if (typeof query === "string" && options && "query" in options) {
-    return Promise.reject(new Error(`[@octokit/graphql] "query" cannot be used as variable name`));
+  if (options) {
+    if (typeof query === "string" && "query" in options) {
+      return Promise.reject(new Error(`[@octokit/graphql] "query" cannot be used as variable name`));
+    }
+
+    for (const key in options) {
+      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key)) continue;
+      return Promise.reject(new Error(`[@octokit/graphql] "${key}" cannot be used as variable name`));
+    }
   }
 
   const parsedOptions = typeof query === "string" ? Object.assign({
@@ -2106,7 +2199,7 @@ exports.paginateRest = paginateRest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "1.0.2";
+const VERSION = "1.0.4";
 
 /**
  * @param octokit Octokit instance
@@ -15419,13 +15512,15 @@ var isPlainObject = __webpack_require__(3287);
 var nodeFetch = _interopDefault(__webpack_require__(467));
 var requestError = __webpack_require__(13);
 
-const VERSION = "5.4.12";
+const VERSION = "5.6.0";
 
 function getBufferResponse(response) {
   return response.arrayBuffer();
 }
 
 function fetchWrapper(requestOptions) {
+  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
+
   if (isPlainObject.isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
     requestOptions.body = JSON.stringify(requestOptions.body);
   }
@@ -15439,12 +15534,20 @@ function fetchWrapper(requestOptions) {
     body: requestOptions.body,
     headers: requestOptions.headers,
     redirect: requestOptions.redirect
-  }, requestOptions.request)).then(response => {
+  }, // `requestOptions.request.agent` type is incompatible
+  // see https://github.com/octokit/types.ts/pull/264
+  requestOptions.request)).then(async response => {
     url = response.url;
     status = response.status;
 
     for (const keyAndValue of response.headers) {
       headers[keyAndValue[0]] = keyAndValue[1];
+    }
+
+    if ("deprecation" in headers) {
+      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
+      const deprecationLink = matches && matches.pop();
+      log.warn(`[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`);
     }
 
     if (status === 204 || status === 205) {
@@ -15458,49 +15561,43 @@ function fetchWrapper(requestOptions) {
       }
 
       throw new requestError.RequestError(response.statusText, status, {
-        headers,
+        response: {
+          url,
+          status,
+          headers,
+          data: undefined
+        },
         request: requestOptions
       });
     }
 
     if (status === 304) {
       throw new requestError.RequestError("Not modified", status, {
-        headers,
+        response: {
+          url,
+          status,
+          headers,
+          data: await getResponseData(response)
+        },
         request: requestOptions
       });
     }
 
     if (status >= 400) {
-      return response.text().then(message => {
-        const error = new requestError.RequestError(message, status, {
+      const data = await getResponseData(response);
+      const error = new requestError.RequestError(toErrorMessage(data), status, {
+        response: {
+          url,
+          status,
           headers,
-          request: requestOptions
-        });
-
-        try {
-          let responseBody = JSON.parse(error.message);
-          Object.assign(error, responseBody);
-          let errors = responseBody.errors; // Assumption `errors` would always be in Array format
-
-          error.message = error.message + ": " + errors.map(JSON.stringify).join(", ");
-        } catch (e) {// ignore, see octokit/rest.js#684
-        }
-
-        throw error;
+          data
+        },
+        request: requestOptions
       });
+      throw error;
     }
 
-    const contentType = response.headers.get("content-type");
-
-    if (/application\/json/.test(contentType)) {
-      return response.json();
-    }
-
-    if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-      return response.text();
-    }
-
-    return getBufferResponse(response);
+    return getResponseData(response);
   }).then(data => {
     return {
       status,
@@ -15509,15 +15606,40 @@ function fetchWrapper(requestOptions) {
       data
     };
   }).catch(error => {
-    if (error instanceof requestError.RequestError) {
-      throw error;
-    }
-
+    if (error instanceof requestError.RequestError) throw error;
     throw new requestError.RequestError(error.message, 500, {
-      headers,
       request: requestOptions
     });
   });
+}
+
+async function getResponseData(response) {
+  const contentType = response.headers.get("content-type");
+
+  if (/application\/json/.test(contentType)) {
+    return response.json();
+  }
+
+  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
+    return response.text();
+  }
+
+  return getBufferResponse(response);
+}
+
+function toErrorMessage(data) {
+  if (typeof data === "string") return data; // istanbul ignore else - just in case
+
+  if ("message" in data) {
+    if (Array.isArray(data.errors)) {
+      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}`;
+    }
+
+    return data.message;
+  } // istanbul ignore next - just in case
+
+
+  return `Unknown error: ${JSON.stringify(data)}`;
 }
 
 function withDefaults(oldEndpoint, newDefaults) {
@@ -15572,7 +15694,8 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var deprecation = __webpack_require__(8932);
 var once = _interopDefault(__webpack_require__(1223));
 
-const logOnce = once(deprecation => console.warn(deprecation));
+const logOnceCode = once(deprecation => console.warn(deprecation));
+const logOnceHeaders = once(deprecation => console.warn(deprecation));
 /**
  * Error with extra properties to help with debugging
  */
@@ -15589,14 +15712,17 @@ class RequestError extends Error {
 
     this.name = "HttpError";
     this.status = statusCode;
-    Object.defineProperty(this, "code", {
-      get() {
-        logOnce(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
-        return statusCode;
-      }
+    let headers;
 
-    });
-    this.headers = options.headers || {}; // redact request credentials without mutating original request options
+    if ("headers" in options && typeof options.headers !== "undefined") {
+      headers = options.headers;
+    }
+
+    if ("response" in options) {
+      this.response = options.response;
+      headers = options.response.headers;
+    } // redact request credentials without mutating original request options
+
 
     const requestCopy = Object.assign({}, options.request);
 
@@ -15611,7 +15737,22 @@ class RequestError extends Error {
     .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
     // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
     .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
+    this.request = requestCopy; // deprecations
+
+    Object.defineProperty(this, "code", {
+      get() {
+        logOnceCode(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
+        return statusCode;
+      }
+
+    });
+    Object.defineProperty(this, "headers", {
+      get() {
+        logOnceHeaders(new deprecation.Deprecation("[@octokit/request-error] `error.headers` is deprecated, use `error.response.headers`."));
+        return headers || {};
+      }
+
+    });
   }
 
 }
@@ -17379,7 +17520,7 @@ AWS.util.update(AWS, {
   /**
    * @constant
    */
-  VERSION: '2.812.0',
+  VERSION: '2.943.0',
 
   /**
    * @api private
@@ -18951,7 +19092,7 @@ AWS.ProcessCredentials = AWS.util.inherit(AWS.Credentials, {
   * @throws ProcessCredentialsProviderFailure
   */
   loadViaCredentialProcess: function loadViaCredentialProcess(profile, callback) {
-    proc.exec(profile['credential_process'], function(err, stdOut, stdErr) {
+    proc.exec(profile['credential_process'], { env: process.env }, function(err, stdOut, stdErr) {
       if (err) {
         callback(AWS.util.error(
           new Error('credential_process returned error'),
@@ -21277,6 +21418,29 @@ AWS.EventListeners = {
       new AWS.ParamValidator(validation).validate(rules, req.params);
     });
 
+    add('COMPUTE_CHECKSUM', 'afterBuild', function COMPUTE_CHECKSUM(req) {
+      if (!req.service.api.operations) {
+        return;
+      }
+      var operation = req.service.api.operations[req.operation];
+      if (!operation) {
+        return;
+      }
+      var body = req.httpRequest.body;
+      var isNonStreamingPayload = body && (AWS.util.Buffer.isBuffer(body) || typeof body === 'string');
+      var headers = req.httpRequest.headers;
+      if (
+        operation.httpChecksumRequired &&
+        req.service.config.computeChecksums &&
+        isNonStreamingPayload &&
+        req.service.getSignerClass(req) === AWS.Signers.V4 &&
+        !headers['Content-MD5']
+      ) {
+        var md5 = AWS.util.crypto.md5(body, 'base64');
+        headers['Content-MD5'] = md5;
+      }
+    });
+
     addAsync('COMPUTE_SHA256', 'afterBuild', function COMPUTE_SHA256(req, done) {
       req.haltHandlersOnError();
       if (!req.service.api.operations) {
@@ -21370,7 +21534,7 @@ AWS.EventListeners = {
           var date = service.getSkewCorrectedDate();
           var SignerClass = service.getSignerClass(req);
           var signer = new SignerClass(req.httpRequest,
-            service.getSigningName(),
+            service.getSigningName(req),
             {
               signatureCache: service.config.signatureCache,
               operation: operation,
@@ -22111,18 +22275,22 @@ AWS.NodeHttpClient = AWS.util.inherit({
       stream.abort();
     });
 
-    stream.on('error', function() {
+    stream.on('error', function(err) {
       if (connectTimeoutId) {
         clearTimeout(connectTimeoutId);
         connectTimeoutId = null;
       }
       if (stream.didCallback) return; stream.didCallback = true;
-      errCallback.apply(stream, arguments);
+      if ('ECONNRESET' === err.code || 'EPIPE' === err.code || 'ETIMEDOUT' === err.code) {
+        errCallback(AWS.util.error(err, {code: 'TimeoutError'}));
+      } else {
+        errCallback(err);
+      }
     });
 
     var expect = httpRequest.headers.Expect || httpRequest.headers.expect;
     if (expect === '100-continue') {
-      stream.on('continue', function() {
+      stream.once('continue', function() {
         self.writeBody(stream, httpRequest);
       });
     } else {
@@ -22776,6 +22944,7 @@ function Operation(name, operation, options) {
       (operation.endpointdiscovery.required ? 'REQUIRED' : 'OPTIONAL') :
     'NULL'
   );
+  property(this, 'httpChecksumRequired', operation.httpChecksumRequired, false);
 
   memoizedProperty(this, 'input', function() {
     if (!operation.input) {
@@ -23445,7 +23614,13 @@ AWS.util.update(AWS.Config.prototype.keys, {
       ];
       var iniLoader = AWS.util.iniLoader;
       while (!region && toCheck.length) {
-        var configFile = iniLoader.loadFrom(toCheck.shift());
+        var configFile = {};
+        var fileInfo = toCheck.shift();
+        try {
+          configFile = iniLoader.loadFrom(fileInfo);
+        } catch (err) {
+          if (fileInfo.isConfig) throw err;
+        }
         var profile = configFile[env.AWS_PROFILE || AWS.util.defaultProfile];
         region = profile && profile.region;
       }
@@ -23538,7 +23713,7 @@ AWS.ParamValidator = AWS.util.inherit({
       if (memberShape !== undefined) {
         var memberContext = [context, paramName].join('.');
         this.validateMember(memberShape, paramValue, memberContext);
-      } else {
+      } else if (paramValue !== undefined && paramValue !== null) {
         this.fail('UnexpectedParameter',
           'Unexpected key \'' + paramName + '\' found in ' + context);
       }
@@ -28507,6 +28682,11 @@ var util = {
         var section = line.match(/^\s*\[([^\[\]]+)\]\s*$/);
         if (section) {
           currentSection = section[1];
+          if (currentSection === '__proto__' || currentSection.split(/\s/)[1] === '__proto__') {
+            throw util.error(
+              new Error('Cannot load profile name \'' + currentSection + '\' from shared ini file.')
+            );
+          }
         } else if (currentSection) {
           var item = line.match(/^\s*(.+?)\s*=\s*(.+?)\s*$/);
           if (item) {
@@ -29482,7 +29662,13 @@ module.exports = {
  * Escapes characters that can not be in an XML element.
  */
 function escapeElement(value) {
-    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return value.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\r/g, '&#x0D;')
+                .replace(/\n/g, '&#x0A;')
+                .replace(/\u0085/g, '&#x85;')
+                .replace(/\u2028/, '&#x2028;');
 }
 
 /**
@@ -29780,12 +29966,15 @@ var EndpointCache = /** @class */ (function () {
         var now = Date.now();
         var records = this.cache.get(keyString);
         if (records) {
-            for (var i = 0; i < records.length; i++) {
+            for (var i = records.length-1; i >= 0; i--) {
                 var record = records[i];
                 if (record.Expire < now) {
-                    this.cache.remove(keyString);
-                    return undefined;
+                    records.splice(i, 1);
                 }
+            }
+            if (records.length === 0) {
+                this.cache.remove(keyString);
+                return undefined;
             }
         }
         return records;
@@ -30002,51 +30191,51 @@ module.exports.Collection = Hook.Collection
 /***/ 5549:
 /***/ ((module) => {
 
-module.exports = addHook
+module.exports = addHook;
 
-function addHook (state, kind, name, hook) {
-  var orig = hook
+function addHook(state, kind, name, hook) {
+  var orig = hook;
   if (!state.registry[name]) {
-    state.registry[name] = []
+    state.registry[name] = [];
   }
 
-  if (kind === 'before') {
+  if (kind === "before") {
     hook = function (method, options) {
       return Promise.resolve()
         .then(orig.bind(null, options))
-        .then(method.bind(null, options))
-    }
+        .then(method.bind(null, options));
+    };
   }
 
-  if (kind === 'after') {
+  if (kind === "after") {
     hook = function (method, options) {
-      var result
+      var result;
       return Promise.resolve()
         .then(method.bind(null, options))
         .then(function (result_) {
-          result = result_
-          return orig(result, options)
+          result = result_;
+          return orig(result, options);
         })
         .then(function () {
-          return result
-        })
-    }
+          return result;
+        });
+    };
   }
 
-  if (kind === 'error') {
+  if (kind === "error") {
     hook = function (method, options) {
       return Promise.resolve()
         .then(method.bind(null, options))
         .catch(function (error) {
-          return orig(error, options)
-        })
-    }
+          return orig(error, options);
+        });
+    };
   }
 
   state.registry[name].push({
     hook: hook,
-    orig: orig
-  })
+    orig: orig,
+  });
 }
 
 
@@ -30055,33 +30244,32 @@ function addHook (state, kind, name, hook) {
 /***/ 4670:
 /***/ ((module) => {
 
-module.exports = register
+module.exports = register;
 
-function register (state, name, method, options) {
-  if (typeof method !== 'function') {
-    throw new Error('method for before hook must be a function')
+function register(state, name, method, options) {
+  if (typeof method !== "function") {
+    throw new Error("method for before hook must be a function");
   }
 
   if (!options) {
-    options = {}
+    options = {};
   }
 
   if (Array.isArray(name)) {
     return name.reverse().reduce(function (callback, name) {
-      return register.bind(null, state, name, callback, options)
-    }, method)()
+      return register.bind(null, state, name, callback, options);
+    }, method)();
   }
 
-  return Promise.resolve()
-    .then(function () {
-      if (!state.registry[name]) {
-        return method(options)
-      }
+  return Promise.resolve().then(function () {
+    if (!state.registry[name]) {
+      return method(options);
+    }
 
-      return (state.registry[name]).reduce(function (method, registered) {
-        return registered.hook.bind(null, method, options)
-      }, method)()
-    })
+    return state.registry[name].reduce(function (method, registered) {
+      return registered.hook.bind(null, method, options);
+    }, method)();
+  });
 }
 
 
@@ -30090,22 +30278,24 @@ function register (state, name, method, options) {
 /***/ 6819:
 /***/ ((module) => {
 
-module.exports = removeHook
+module.exports = removeHook;
 
-function removeHook (state, name, method) {
+function removeHook(state, name, method) {
   if (!state.registry[name]) {
-    return
+    return;
   }
 
   var index = state.registry[name]
-    .map(function (registered) { return registered.orig })
-    .indexOf(method)
+    .map(function (registered) {
+      return registered.orig;
+    })
+    .indexOf(method);
 
   if (index === -1) {
-    return
+    return;
   }
 
-  state.registry[name].splice(index, 1)
+  state.registry[name].splice(index, 1);
 }
 
 
@@ -40150,6 +40340,7 @@ module.exports = uniq;
 const os = __webpack_require__(2087);
 
 const nameMap = new Map([
+	[21, ['Monterey', '12']],
 	[20, ['Big Sur', '11']],
 	[19, ['Catalina', '10.15']],
 	[18, ['Mojave', '10.14']],
@@ -49856,7 +50047,7 @@ module.exports = eval("require")("encoding");
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"version\":\"2.0\",\"metadata\":{\"apiVersion\":\"2014-10-06\",\"endpointPrefix\":\"codedeploy\",\"jsonVersion\":\"1.1\",\"protocol\":\"json\",\"serviceAbbreviation\":\"CodeDeploy\",\"serviceFullName\":\"AWS CodeDeploy\",\"serviceId\":\"CodeDeploy\",\"signatureVersion\":\"v4\",\"targetPrefix\":\"CodeDeploy_20141006\",\"uid\":\"codedeploy-2014-10-06\"},\"operations\":{\"AddTagsToOnPremisesInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"tags\",\"instanceNames\"],\"members\":{\"tags\":{\"shape\":\"S2\"},\"instanceNames\":{\"shape\":\"S6\"}}}},\"BatchGetApplicationRevisions\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"revisions\"],\"members\":{\"applicationName\":{},\"revisions\":{\"shape\":\"Sa\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"errorMessage\":{},\"revisions\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"revisionLocation\":{\"shape\":\"Sb\"},\"genericRevisionInfo\":{\"shape\":\"Su\"}}}}}}},\"BatchGetApplications\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationNames\"],\"members\":{\"applicationNames\":{\"shape\":\"S10\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationsInfo\":{\"type\":\"list\",\"member\":{\"shape\":\"S13\"}}}}},\"BatchGetDeploymentGroups\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"deploymentGroupNames\"],\"members\":{\"applicationName\":{},\"deploymentGroupNames\":{\"shape\":\"Sw\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentGroupsInfo\":{\"type\":\"list\",\"member\":{\"shape\":\"S1b\"}},\"errorMessage\":{}}}},\"BatchGetDeploymentInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\",\"instanceIds\"],\"members\":{\"deploymentId\":{},\"instanceIds\":{\"shape\":\"S31\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"instancesSummary\":{\"type\":\"list\",\"member\":{\"shape\":\"S35\"}},\"errorMessage\":{}}},\"deprecated\":true,\"deprecatedMessage\":\"This operation is deprecated, use BatchGetDeploymentTargets instead.\"},\"BatchGetDeploymentTargets\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetIds\":{\"shape\":\"S3i\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentTargets\":{\"type\":\"list\",\"member\":{\"shape\":\"S3m\"}}}}},\"BatchGetDeployments\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentIds\"],\"members\":{\"deploymentIds\":{\"shape\":\"S48\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentsInfo\":{\"type\":\"list\",\"member\":{\"shape\":\"S4b\"}}}}},\"BatchGetOnPremisesInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"instanceNames\"],\"members\":{\"instanceNames\":{\"shape\":\"S6\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"instanceInfos\":{\"type\":\"list\",\"member\":{\"shape\":\"S4r\"}}}}},\"ContinueDeployment\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"deploymentWaitType\":{}}}},\"CreateApplication\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{},\"computePlatform\":{},\"tags\":{\"shape\":\"S2\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationId\":{}}}},\"CreateDeployment\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{},\"deploymentGroupName\":{},\"revision\":{\"shape\":\"Sb\"},\"deploymentConfigName\":{},\"description\":{},\"ignoreApplicationStopFailures\":{\"type\":\"boolean\"},\"targetInstances\":{\"shape\":\"S4i\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"updateOutdatedInstancesOnly\":{\"type\":\"boolean\"},\"fileExistsBehavior\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{}}}},\"CreateDeploymentConfig\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentConfigName\"],\"members\":{\"deploymentConfigName\":{},\"minimumHealthyHosts\":{\"shape\":\"S52\"},\"trafficRoutingConfig\":{\"shape\":\"S55\"},\"computePlatform\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentConfigId\":{}}}},\"CreateDeploymentGroup\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"deploymentGroupName\",\"serviceRoleArn\"],\"members\":{\"applicationName\":{},\"deploymentGroupName\":{},\"deploymentConfigName\":{},\"ec2TagFilters\":{\"shape\":\"S1e\"},\"onPremisesInstanceTagFilters\":{\"shape\":\"S1h\"},\"autoScalingGroups\":{\"shape\":\"S4j\"},\"serviceRoleArn\":{},\"triggerConfigurations\":{\"shape\":\"S1p\"},\"alarmConfiguration\":{\"shape\":\"S1v\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"deploymentStyle\":{\"shape\":\"S22\"},\"blueGreenDeploymentConfiguration\":{\"shape\":\"S25\"},\"loadBalancerInfo\":{\"shape\":\"S2d\"},\"ec2TagSet\":{\"shape\":\"S2s\"},\"ecsServices\":{\"shape\":\"S2w\"},\"onPremisesTagSet\":{\"shape\":\"S2u\"},\"tags\":{\"shape\":\"S2\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentGroupId\":{}}}},\"DeleteApplication\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{}}}},\"DeleteDeploymentConfig\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentConfigName\"],\"members\":{\"deploymentConfigName\":{}}}},\"DeleteDeploymentGroup\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"deploymentGroupName\"],\"members\":{\"applicationName\":{},\"deploymentGroupName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"hooksNotCleanedUp\":{\"shape\":\"S1k\"}}}},\"DeleteGitHubAccountToken\":{\"input\":{\"type\":\"structure\",\"members\":{\"tokenName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"tokenName\":{}}}},\"DeleteResourcesByExternalId\":{\"input\":{\"type\":\"structure\",\"members\":{\"externalId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"DeregisterOnPremisesInstance\":{\"input\":{\"type\":\"structure\",\"required\":[\"instanceName\"],\"members\":{\"instanceName\":{}}}},\"GetApplication\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"application\":{\"shape\":\"S13\"}}}},\"GetApplicationRevision\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"revision\"],\"members\":{\"applicationName\":{},\"revision\":{\"shape\":\"Sb\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"revision\":{\"shape\":\"Sb\"},\"revisionInfo\":{\"shape\":\"Su\"}}}},\"GetDeployment\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\"],\"members\":{\"deploymentId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentInfo\":{\"shape\":\"S4b\"}}}},\"GetDeploymentConfig\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentConfigName\"],\"members\":{\"deploymentConfigName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentConfigInfo\":{\"type\":\"structure\",\"members\":{\"deploymentConfigId\":{},\"deploymentConfigName\":{},\"minimumHealthyHosts\":{\"shape\":\"S52\"},\"createTime\":{\"type\":\"timestamp\"},\"computePlatform\":{},\"trafficRoutingConfig\":{\"shape\":\"S55\"}}}}}},\"GetDeploymentGroup\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"deploymentGroupName\"],\"members\":{\"applicationName\":{},\"deploymentGroupName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentGroupInfo\":{\"shape\":\"S1b\"}}}},\"GetDeploymentInstance\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\",\"instanceId\"],\"members\":{\"deploymentId\":{},\"instanceId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"instanceSummary\":{\"shape\":\"S35\"}}},\"deprecated\":true,\"deprecatedMessage\":\"This operation is deprecated, use GetDeploymentTarget instead.\"},\"GetDeploymentTarget\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentTarget\":{\"shape\":\"S3m\"}}}},\"GetOnPremisesInstance\":{\"input\":{\"type\":\"structure\",\"required\":[\"instanceName\"],\"members\":{\"instanceName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"instanceInfo\":{\"shape\":\"S4r\"}}}},\"ListApplicationRevisions\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{},\"sortBy\":{},\"sortOrder\":{},\"s3Bucket\":{},\"s3KeyPrefix\":{},\"deployed\":{},\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"revisions\":{\"shape\":\"Sa\"},\"nextToken\":{}}}},\"ListApplications\":{\"input\":{\"type\":\"structure\",\"members\":{\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"applications\":{\"shape\":\"S10\"},\"nextToken\":{}}}},\"ListDeploymentConfigs\":{\"input\":{\"type\":\"structure\",\"members\":{\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentConfigsList\":{\"type\":\"list\",\"member\":{}},\"nextToken\":{}}}},\"ListDeploymentGroups\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{},\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"deploymentGroups\":{\"shape\":\"Sw\"},\"nextToken\":{}}}},\"ListDeploymentInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\"],\"members\":{\"deploymentId\":{},\"nextToken\":{},\"instanceStatusFilter\":{\"type\":\"list\",\"member\":{\"shape\":\"S36\"}},\"instanceTypeFilter\":{\"type\":\"list\",\"member\":{}}}},\"output\":{\"type\":\"structure\",\"members\":{\"instancesList\":{\"shape\":\"S31\"},\"nextToken\":{}}},\"deprecated\":true,\"deprecatedMessage\":\"This operation is deprecated, use ListDeploymentTargets instead.\"},\"ListDeploymentTargets\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"nextToken\":{},\"targetFilters\":{\"type\":\"map\",\"key\":{},\"value\":{\"type\":\"list\",\"member\":{}}}}},\"output\":{\"type\":\"structure\",\"members\":{\"targetIds\":{\"shape\":\"S3i\"},\"nextToken\":{}}}},\"ListDeployments\":{\"input\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"deploymentGroupName\":{},\"externalId\":{},\"includeOnlyStatuses\":{\"type\":\"list\",\"member\":{}},\"createTimeRange\":{\"type\":\"structure\",\"members\":{\"start\":{\"type\":\"timestamp\"},\"end\":{\"type\":\"timestamp\"}}},\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deployments\":{\"shape\":\"S48\"},\"nextToken\":{}}}},\"ListGitHubAccountTokenNames\":{\"input\":{\"type\":\"structure\",\"members\":{\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"tokenNameList\":{\"type\":\"list\",\"member\":{}},\"nextToken\":{}}}},\"ListOnPremisesInstances\":{\"input\":{\"type\":\"structure\",\"members\":{\"registrationStatus\":{},\"tagFilters\":{\"shape\":\"S1h\"},\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"instanceNames\":{\"shape\":\"S6\"},\"nextToken\":{}}}},\"ListTagsForResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\"],\"members\":{\"ResourceArn\":{},\"NextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"Tags\":{\"shape\":\"S2\"},\"NextToken\":{}}}},\"PutLifecycleEventHookExecutionStatus\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"lifecycleEventHookExecutionId\":{},\"status\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"lifecycleEventHookExecutionId\":{}}}},\"RegisterApplicationRevision\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"revision\"],\"members\":{\"applicationName\":{},\"description\":{},\"revision\":{\"shape\":\"Sb\"}}}},\"RegisterOnPremisesInstance\":{\"input\":{\"type\":\"structure\",\"required\":[\"instanceName\"],\"members\":{\"instanceName\":{},\"iamSessionArn\":{},\"iamUserArn\":{}}}},\"RemoveTagsFromOnPremisesInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"tags\",\"instanceNames\"],\"members\":{\"tags\":{\"shape\":\"S2\"},\"instanceNames\":{\"shape\":\"S6\"}}}},\"SkipWaitTimeForInstanceTermination\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{}}},\"deprecated\":true,\"deprecatedMessage\":\"This operation is deprecated, use ContinueDeployment with DeploymentWaitType instead.\"},\"StopDeployment\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\"],\"members\":{\"deploymentId\":{},\"autoRollbackEnabled\":{\"type\":\"boolean\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"status\":{},\"statusMessage\":{}}}},\"TagResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\",\"Tags\"],\"members\":{\"ResourceArn\":{},\"Tags\":{\"shape\":\"S2\"}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"UntagResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\",\"TagKeys\"],\"members\":{\"ResourceArn\":{},\"TagKeys\":{\"type\":\"list\",\"member\":{}}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"UpdateApplication\":{\"input\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"newApplicationName\":{}}}},\"UpdateDeploymentGroup\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"currentDeploymentGroupName\"],\"members\":{\"applicationName\":{},\"currentDeploymentGroupName\":{},\"newDeploymentGroupName\":{},\"deploymentConfigName\":{},\"ec2TagFilters\":{\"shape\":\"S1e\"},\"onPremisesInstanceTagFilters\":{\"shape\":\"S1h\"},\"autoScalingGroups\":{\"shape\":\"S4j\"},\"serviceRoleArn\":{},\"triggerConfigurations\":{\"shape\":\"S1p\"},\"alarmConfiguration\":{\"shape\":\"S1v\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"deploymentStyle\":{\"shape\":\"S22\"},\"blueGreenDeploymentConfiguration\":{\"shape\":\"S25\"},\"loadBalancerInfo\":{\"shape\":\"S2d\"},\"ec2TagSet\":{\"shape\":\"S2s\"},\"ecsServices\":{\"shape\":\"S2w\"},\"onPremisesTagSet\":{\"shape\":\"S2u\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"hooksNotCleanedUp\":{\"shape\":\"S1k\"}}}}},\"shapes\":{\"S2\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"Key\":{},\"Value\":{}}}},\"S6\":{\"type\":\"list\",\"member\":{}},\"Sa\":{\"type\":\"list\",\"member\":{\"shape\":\"Sb\"}},\"Sb\":{\"type\":\"structure\",\"members\":{\"revisionType\":{},\"s3Location\":{\"type\":\"structure\",\"members\":{\"bucket\":{},\"key\":{},\"bundleType\":{},\"version\":{},\"eTag\":{}}},\"gitHubLocation\":{\"type\":\"structure\",\"members\":{\"repository\":{},\"commitId\":{}}},\"string\":{\"type\":\"structure\",\"members\":{\"content\":{},\"sha256\":{}},\"deprecated\":true,\"deprecatedMessage\":\"RawString and String revision type are deprecated, use AppSpecContent type instead.\"},\"appSpecContent\":{\"type\":\"structure\",\"members\":{\"content\":{},\"sha256\":{}}}}},\"Su\":{\"type\":\"structure\",\"members\":{\"description\":{},\"deploymentGroups\":{\"shape\":\"Sw\"},\"firstUsedTime\":{\"type\":\"timestamp\"},\"lastUsedTime\":{\"type\":\"timestamp\"},\"registerTime\":{\"type\":\"timestamp\"}}},\"Sw\":{\"type\":\"list\",\"member\":{}},\"S10\":{\"type\":\"list\",\"member\":{}},\"S13\":{\"type\":\"structure\",\"members\":{\"applicationId\":{},\"applicationName\":{},\"createTime\":{\"type\":\"timestamp\"},\"linkedToGitHub\":{\"type\":\"boolean\"},\"gitHubAccountName\":{},\"computePlatform\":{}}},\"S1b\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"deploymentGroupId\":{},\"deploymentGroupName\":{},\"deploymentConfigName\":{},\"ec2TagFilters\":{\"shape\":\"S1e\"},\"onPremisesInstanceTagFilters\":{\"shape\":\"S1h\"},\"autoScalingGroups\":{\"shape\":\"S1k\"},\"serviceRoleArn\":{},\"targetRevision\":{\"shape\":\"Sb\"},\"triggerConfigurations\":{\"shape\":\"S1p\"},\"alarmConfiguration\":{\"shape\":\"S1v\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"deploymentStyle\":{\"shape\":\"S22\"},\"blueGreenDeploymentConfiguration\":{\"shape\":\"S25\"},\"loadBalancerInfo\":{\"shape\":\"S2d\"},\"lastSuccessfulDeployment\":{\"shape\":\"S2p\"},\"lastAttemptedDeployment\":{\"shape\":\"S2p\"},\"ec2TagSet\":{\"shape\":\"S2s\"},\"onPremisesTagSet\":{\"shape\":\"S2u\"},\"computePlatform\":{},\"ecsServices\":{\"shape\":\"S2w\"}}},\"S1e\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"Key\":{},\"Value\":{},\"Type\":{}}}},\"S1h\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"Key\":{},\"Value\":{},\"Type\":{}}}},\"S1k\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"name\":{},\"hook\":{}}}},\"S1p\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"triggerName\":{},\"triggerTargetArn\":{},\"triggerEvents\":{\"type\":\"list\",\"member\":{}}}}},\"S1v\":{\"type\":\"structure\",\"members\":{\"enabled\":{\"type\":\"boolean\"},\"ignorePollAlarmFailure\":{\"type\":\"boolean\"},\"alarms\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"name\":{}}}}}},\"S1z\":{\"type\":\"structure\",\"members\":{\"enabled\":{\"type\":\"boolean\"},\"events\":{\"type\":\"list\",\"member\":{}}}},\"S22\":{\"type\":\"structure\",\"members\":{\"deploymentType\":{},\"deploymentOption\":{}}},\"S25\":{\"type\":\"structure\",\"members\":{\"terminateBlueInstancesOnDeploymentSuccess\":{\"type\":\"structure\",\"members\":{\"action\":{},\"terminationWaitTimeInMinutes\":{\"type\":\"integer\"}}},\"deploymentReadyOption\":{\"type\":\"structure\",\"members\":{\"actionOnTimeout\":{},\"waitTimeInMinutes\":{\"type\":\"integer\"}}},\"greenFleetProvisioningOption\":{\"type\":\"structure\",\"members\":{\"action\":{}}}}},\"S2d\":{\"type\":\"structure\",\"members\":{\"elbInfoList\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"name\":{}}}},\"targetGroupInfoList\":{\"shape\":\"S2h\"},\"targetGroupPairInfoList\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"targetGroups\":{\"shape\":\"S2h\"},\"prodTrafficRoute\":{\"shape\":\"S2m\"},\"testTrafficRoute\":{\"shape\":\"S2m\"}}}}}},\"S2h\":{\"type\":\"list\",\"member\":{\"shape\":\"S2i\"}},\"S2i\":{\"type\":\"structure\",\"members\":{\"name\":{}}},\"S2m\":{\"type\":\"structure\",\"members\":{\"listenerArns\":{\"type\":\"list\",\"member\":{}}}},\"S2p\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"status\":{},\"endTime\":{\"type\":\"timestamp\"},\"createTime\":{\"type\":\"timestamp\"}}},\"S2s\":{\"type\":\"structure\",\"members\":{\"ec2TagSetList\":{\"type\":\"list\",\"member\":{\"shape\":\"S1e\"}}}},\"S2u\":{\"type\":\"structure\",\"members\":{\"onPremisesTagSetList\":{\"type\":\"list\",\"member\":{\"shape\":\"S1h\"}}}},\"S2w\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"serviceName\":{},\"clusterName\":{}}}},\"S31\":{\"type\":\"list\",\"member\":{}},\"S35\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"instanceId\":{},\"status\":{\"shape\":\"S36\"},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S37\"},\"instanceType\":{}},\"deprecated\":true,\"deprecatedMessage\":\"InstanceSummary is deprecated, use DeploymentTarget instead.\"},\"S36\":{\"type\":\"string\",\"deprecated\":true,\"deprecatedMessage\":\"InstanceStatus is deprecated, use TargetStatus instead.\"},\"S37\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"lifecycleEventName\":{},\"diagnostics\":{\"type\":\"structure\",\"members\":{\"errorCode\":{},\"scriptName\":{},\"message\":{},\"logTail\":{}}},\"startTime\":{\"type\":\"timestamp\"},\"endTime\":{\"type\":\"timestamp\"},\"status\":{}}}},\"S3i\":{\"type\":\"list\",\"member\":{}},\"S3m\":{\"type\":\"structure\",\"members\":{\"deploymentTargetType\":{},\"instanceTarget\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{},\"targetArn\":{},\"status\":{},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S37\"},\"instanceLabel\":{}}},\"lambdaTarget\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{},\"targetArn\":{},\"status\":{},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S37\"},\"lambdaFunctionInfo\":{\"type\":\"structure\",\"members\":{\"functionName\":{},\"functionAlias\":{},\"currentVersion\":{},\"targetVersion\":{},\"targetVersionWeight\":{\"type\":\"double\"}}}}},\"ecsTarget\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{},\"targetArn\":{},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S37\"},\"status\":{},\"taskSetsInfo\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"identifer\":{},\"desiredCount\":{\"type\":\"long\"},\"pendingCount\":{\"type\":\"long\"},\"runningCount\":{\"type\":\"long\"},\"status\":{},\"trafficWeight\":{\"type\":\"double\"},\"targetGroup\":{\"shape\":\"S2i\"},\"taskSetLabel\":{}}}}}},\"cloudFormationTarget\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S37\"},\"status\":{},\"resourceType\":{},\"targetVersionWeight\":{\"type\":\"double\"}}}}},\"S48\":{\"type\":\"list\",\"member\":{}},\"S4b\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"deploymentGroupName\":{},\"deploymentConfigName\":{},\"deploymentId\":{},\"previousRevision\":{\"shape\":\"Sb\"},\"revision\":{\"shape\":\"Sb\"},\"status\":{},\"errorInformation\":{\"type\":\"structure\",\"members\":{\"code\":{},\"message\":{}}},\"createTime\":{\"type\":\"timestamp\"},\"startTime\":{\"type\":\"timestamp\"},\"completeTime\":{\"type\":\"timestamp\"},\"deploymentOverview\":{\"type\":\"structure\",\"members\":{\"Pending\":{\"type\":\"long\"},\"InProgress\":{\"type\":\"long\"},\"Succeeded\":{\"type\":\"long\"},\"Failed\":{\"type\":\"long\"},\"Skipped\":{\"type\":\"long\"},\"Ready\":{\"type\":\"long\"}}},\"description\":{},\"creator\":{},\"ignoreApplicationStopFailures\":{\"type\":\"boolean\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"updateOutdatedInstancesOnly\":{\"type\":\"boolean\"},\"rollbackInfo\":{\"type\":\"structure\",\"members\":{\"rollbackDeploymentId\":{},\"rollbackTriggeringDeploymentId\":{},\"rollbackMessage\":{}}},\"deploymentStyle\":{\"shape\":\"S22\"},\"targetInstances\":{\"shape\":\"S4i\"},\"instanceTerminationWaitTimeStarted\":{\"type\":\"boolean\"},\"blueGreenDeploymentConfiguration\":{\"shape\":\"S25\"},\"loadBalancerInfo\":{\"shape\":\"S2d\"},\"additionalDeploymentStatusInfo\":{\"type\":\"string\",\"deprecated\":true,\"deprecatedMessage\":\"AdditionalDeploymentStatusInfo is deprecated, use DeploymentStatusMessageList instead.\"},\"fileExistsBehavior\":{},\"deploymentStatusMessages\":{\"type\":\"list\",\"member\":{}},\"computePlatform\":{},\"externalId\":{}}},\"S4i\":{\"type\":\"structure\",\"members\":{\"tagFilters\":{\"shape\":\"S1e\"},\"autoScalingGroups\":{\"shape\":\"S4j\"},\"ec2TagSet\":{\"shape\":\"S2s\"}}},\"S4j\":{\"type\":\"list\",\"member\":{}},\"S4r\":{\"type\":\"structure\",\"members\":{\"instanceName\":{},\"iamSessionArn\":{},\"iamUserArn\":{},\"instanceArn\":{},\"registerTime\":{\"type\":\"timestamp\"},\"deregisterTime\":{\"type\":\"timestamp\"},\"tags\":{\"shape\":\"S2\"}}},\"S52\":{\"type\":\"structure\",\"members\":{\"value\":{\"type\":\"integer\"},\"type\":{}}},\"S55\":{\"type\":\"structure\",\"members\":{\"type\":{},\"timeBasedCanary\":{\"type\":\"structure\",\"members\":{\"canaryPercentage\":{\"type\":\"integer\"},\"canaryInterval\":{\"type\":\"integer\"}}},\"timeBasedLinear\":{\"type\":\"structure\",\"members\":{\"linearPercentage\":{\"type\":\"integer\"},\"linearInterval\":{\"type\":\"integer\"}}}}}}}");
+module.exports = JSON.parse("{\"version\":\"2.0\",\"metadata\":{\"apiVersion\":\"2014-10-06\",\"endpointPrefix\":\"codedeploy\",\"jsonVersion\":\"1.1\",\"protocol\":\"json\",\"serviceAbbreviation\":\"CodeDeploy\",\"serviceFullName\":\"AWS CodeDeploy\",\"serviceId\":\"CodeDeploy\",\"signatureVersion\":\"v4\",\"targetPrefix\":\"CodeDeploy_20141006\",\"uid\":\"codedeploy-2014-10-06\"},\"operations\":{\"AddTagsToOnPremisesInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"tags\",\"instanceNames\"],\"members\":{\"tags\":{\"shape\":\"S2\"},\"instanceNames\":{\"shape\":\"S6\"}}}},\"BatchGetApplicationRevisions\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"revisions\"],\"members\":{\"applicationName\":{},\"revisions\":{\"shape\":\"Sa\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"errorMessage\":{},\"revisions\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"revisionLocation\":{\"shape\":\"Sb\"},\"genericRevisionInfo\":{\"shape\":\"Su\"}}}}}}},\"BatchGetApplications\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationNames\"],\"members\":{\"applicationNames\":{\"shape\":\"S10\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationsInfo\":{\"type\":\"list\",\"member\":{\"shape\":\"S13\"}}}}},\"BatchGetDeploymentGroups\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"deploymentGroupNames\"],\"members\":{\"applicationName\":{},\"deploymentGroupNames\":{\"shape\":\"Sw\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentGroupsInfo\":{\"type\":\"list\",\"member\":{\"shape\":\"S1b\"}},\"errorMessage\":{}}}},\"BatchGetDeploymentInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\",\"instanceIds\"],\"members\":{\"deploymentId\":{},\"instanceIds\":{\"shape\":\"S32\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"instancesSummary\":{\"type\":\"list\",\"member\":{\"shape\":\"S36\"}},\"errorMessage\":{}}},\"deprecated\":true,\"deprecatedMessage\":\"This operation is deprecated, use BatchGetDeploymentTargets instead.\"},\"BatchGetDeploymentTargets\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetIds\":{\"shape\":\"S3j\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentTargets\":{\"type\":\"list\",\"member\":{\"shape\":\"S3n\"}}}}},\"BatchGetDeployments\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentIds\"],\"members\":{\"deploymentIds\":{\"shape\":\"S49\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentsInfo\":{\"type\":\"list\",\"member\":{\"shape\":\"S4c\"}}}}},\"BatchGetOnPremisesInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"instanceNames\"],\"members\":{\"instanceNames\":{\"shape\":\"S6\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"instanceInfos\":{\"type\":\"list\",\"member\":{\"shape\":\"S4t\"}}}}},\"ContinueDeployment\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"deploymentWaitType\":{}}}},\"CreateApplication\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{},\"computePlatform\":{},\"tags\":{\"shape\":\"S2\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationId\":{}}}},\"CreateDeployment\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{},\"deploymentGroupName\":{},\"revision\":{\"shape\":\"Sb\"},\"deploymentConfigName\":{},\"description\":{},\"ignoreApplicationStopFailures\":{\"type\":\"boolean\"},\"targetInstances\":{\"shape\":\"S4j\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"updateOutdatedInstancesOnly\":{\"type\":\"boolean\"},\"fileExistsBehavior\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{}}}},\"CreateDeploymentConfig\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentConfigName\"],\"members\":{\"deploymentConfigName\":{},\"minimumHealthyHosts\":{\"shape\":\"S54\"},\"trafficRoutingConfig\":{\"shape\":\"S57\"},\"computePlatform\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentConfigId\":{}}}},\"CreateDeploymentGroup\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"deploymentGroupName\",\"serviceRoleArn\"],\"members\":{\"applicationName\":{},\"deploymentGroupName\":{},\"deploymentConfigName\":{},\"ec2TagFilters\":{\"shape\":\"S1e\"},\"onPremisesInstanceTagFilters\":{\"shape\":\"S1h\"},\"autoScalingGroups\":{\"shape\":\"S4k\"},\"serviceRoleArn\":{},\"triggerConfigurations\":{\"shape\":\"S1p\"},\"alarmConfiguration\":{\"shape\":\"S1v\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"outdatedInstancesStrategy\":{},\"deploymentStyle\":{\"shape\":\"S22\"},\"blueGreenDeploymentConfiguration\":{\"shape\":\"S26\"},\"loadBalancerInfo\":{\"shape\":\"S2e\"},\"ec2TagSet\":{\"shape\":\"S2t\"},\"ecsServices\":{\"shape\":\"S2x\"},\"onPremisesTagSet\":{\"shape\":\"S2v\"},\"tags\":{\"shape\":\"S2\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentGroupId\":{}}}},\"DeleteApplication\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{}}}},\"DeleteDeploymentConfig\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentConfigName\"],\"members\":{\"deploymentConfigName\":{}}}},\"DeleteDeploymentGroup\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"deploymentGroupName\"],\"members\":{\"applicationName\":{},\"deploymentGroupName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"hooksNotCleanedUp\":{\"shape\":\"S1k\"}}}},\"DeleteGitHubAccountToken\":{\"input\":{\"type\":\"structure\",\"members\":{\"tokenName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"tokenName\":{}}}},\"DeleteResourcesByExternalId\":{\"input\":{\"type\":\"structure\",\"members\":{\"externalId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"DeregisterOnPremisesInstance\":{\"input\":{\"type\":\"structure\",\"required\":[\"instanceName\"],\"members\":{\"instanceName\":{}}}},\"GetApplication\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"application\":{\"shape\":\"S13\"}}}},\"GetApplicationRevision\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"revision\"],\"members\":{\"applicationName\":{},\"revision\":{\"shape\":\"Sb\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"revision\":{\"shape\":\"Sb\"},\"revisionInfo\":{\"shape\":\"Su\"}}}},\"GetDeployment\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\"],\"members\":{\"deploymentId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentInfo\":{\"shape\":\"S4c\"}}}},\"GetDeploymentConfig\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentConfigName\"],\"members\":{\"deploymentConfigName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentConfigInfo\":{\"type\":\"structure\",\"members\":{\"deploymentConfigId\":{},\"deploymentConfigName\":{},\"minimumHealthyHosts\":{\"shape\":\"S54\"},\"createTime\":{\"type\":\"timestamp\"},\"computePlatform\":{},\"trafficRoutingConfig\":{\"shape\":\"S57\"}}}}}},\"GetDeploymentGroup\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"deploymentGroupName\"],\"members\":{\"applicationName\":{},\"deploymentGroupName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentGroupInfo\":{\"shape\":\"S1b\"}}}},\"GetDeploymentInstance\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\",\"instanceId\"],\"members\":{\"deploymentId\":{},\"instanceId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"instanceSummary\":{\"shape\":\"S36\"}}},\"deprecated\":true,\"deprecatedMessage\":\"This operation is deprecated, use GetDeploymentTarget instead.\"},\"GetDeploymentTarget\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentTarget\":{\"shape\":\"S3n\"}}}},\"GetOnPremisesInstance\":{\"input\":{\"type\":\"structure\",\"required\":[\"instanceName\"],\"members\":{\"instanceName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"instanceInfo\":{\"shape\":\"S4t\"}}}},\"ListApplicationRevisions\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{},\"sortBy\":{},\"sortOrder\":{},\"s3Bucket\":{},\"s3KeyPrefix\":{},\"deployed\":{},\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"revisions\":{\"shape\":\"Sa\"},\"nextToken\":{}}}},\"ListApplications\":{\"input\":{\"type\":\"structure\",\"members\":{\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"applications\":{\"shape\":\"S10\"},\"nextToken\":{}}}},\"ListDeploymentConfigs\":{\"input\":{\"type\":\"structure\",\"members\":{\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deploymentConfigsList\":{\"type\":\"list\",\"member\":{}},\"nextToken\":{}}}},\"ListDeploymentGroups\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\"],\"members\":{\"applicationName\":{},\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"deploymentGroups\":{\"shape\":\"Sw\"},\"nextToken\":{}}}},\"ListDeploymentInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\"],\"members\":{\"deploymentId\":{},\"nextToken\":{},\"instanceStatusFilter\":{\"type\":\"list\",\"member\":{\"shape\":\"S37\"}},\"instanceTypeFilter\":{\"type\":\"list\",\"member\":{}}}},\"output\":{\"type\":\"structure\",\"members\":{\"instancesList\":{\"shape\":\"S32\"},\"nextToken\":{}}},\"deprecated\":true,\"deprecatedMessage\":\"This operation is deprecated, use ListDeploymentTargets instead.\"},\"ListDeploymentTargets\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"nextToken\":{},\"targetFilters\":{\"type\":\"map\",\"key\":{},\"value\":{\"type\":\"list\",\"member\":{}}}}},\"output\":{\"type\":\"structure\",\"members\":{\"targetIds\":{\"shape\":\"S3j\"},\"nextToken\":{}}}},\"ListDeployments\":{\"input\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"deploymentGroupName\":{},\"externalId\":{},\"includeOnlyStatuses\":{\"type\":\"list\",\"member\":{}},\"createTimeRange\":{\"type\":\"structure\",\"members\":{\"start\":{\"type\":\"timestamp\"},\"end\":{\"type\":\"timestamp\"}}},\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"deployments\":{\"shape\":\"S49\"},\"nextToken\":{}}}},\"ListGitHubAccountTokenNames\":{\"input\":{\"type\":\"structure\",\"members\":{\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"tokenNameList\":{\"type\":\"list\",\"member\":{}},\"nextToken\":{}}}},\"ListOnPremisesInstances\":{\"input\":{\"type\":\"structure\",\"members\":{\"registrationStatus\":{},\"tagFilters\":{\"shape\":\"S1h\"},\"nextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"instanceNames\":{\"shape\":\"S6\"},\"nextToken\":{}}}},\"ListTagsForResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\"],\"members\":{\"ResourceArn\":{},\"NextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"Tags\":{\"shape\":\"S2\"},\"NextToken\":{}}}},\"PutLifecycleEventHookExecutionStatus\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"lifecycleEventHookExecutionId\":{},\"status\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"lifecycleEventHookExecutionId\":{}}}},\"RegisterApplicationRevision\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"revision\"],\"members\":{\"applicationName\":{},\"description\":{},\"revision\":{\"shape\":\"Sb\"}}}},\"RegisterOnPremisesInstance\":{\"input\":{\"type\":\"structure\",\"required\":[\"instanceName\"],\"members\":{\"instanceName\":{},\"iamSessionArn\":{},\"iamUserArn\":{}}}},\"RemoveTagsFromOnPremisesInstances\":{\"input\":{\"type\":\"structure\",\"required\":[\"tags\",\"instanceNames\"],\"members\":{\"tags\":{\"shape\":\"S2\"},\"instanceNames\":{\"shape\":\"S6\"}}}},\"SkipWaitTimeForInstanceTermination\":{\"input\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{}}},\"deprecated\":true,\"deprecatedMessage\":\"This operation is deprecated, use ContinueDeployment with DeploymentWaitType instead.\"},\"StopDeployment\":{\"input\":{\"type\":\"structure\",\"required\":[\"deploymentId\"],\"members\":{\"deploymentId\":{},\"autoRollbackEnabled\":{\"type\":\"boolean\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"status\":{},\"statusMessage\":{}}}},\"TagResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\",\"Tags\"],\"members\":{\"ResourceArn\":{},\"Tags\":{\"shape\":\"S2\"}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"UntagResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\",\"TagKeys\"],\"members\":{\"ResourceArn\":{},\"TagKeys\":{\"type\":\"list\",\"member\":{}}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"UpdateApplication\":{\"input\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"newApplicationName\":{}}}},\"UpdateDeploymentGroup\":{\"input\":{\"type\":\"structure\",\"required\":[\"applicationName\",\"currentDeploymentGroupName\"],\"members\":{\"applicationName\":{},\"currentDeploymentGroupName\":{},\"newDeploymentGroupName\":{},\"deploymentConfigName\":{},\"ec2TagFilters\":{\"shape\":\"S1e\"},\"onPremisesInstanceTagFilters\":{\"shape\":\"S1h\"},\"autoScalingGroups\":{\"shape\":\"S4k\"},\"serviceRoleArn\":{},\"triggerConfigurations\":{\"shape\":\"S1p\"},\"alarmConfiguration\":{\"shape\":\"S1v\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"outdatedInstancesStrategy\":{},\"deploymentStyle\":{\"shape\":\"S22\"},\"blueGreenDeploymentConfiguration\":{\"shape\":\"S26\"},\"loadBalancerInfo\":{\"shape\":\"S2e\"},\"ec2TagSet\":{\"shape\":\"S2t\"},\"ecsServices\":{\"shape\":\"S2x\"},\"onPremisesTagSet\":{\"shape\":\"S2v\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"hooksNotCleanedUp\":{\"shape\":\"S1k\"}}}}},\"shapes\":{\"S2\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"Key\":{},\"Value\":{}}}},\"S6\":{\"type\":\"list\",\"member\":{}},\"Sa\":{\"type\":\"list\",\"member\":{\"shape\":\"Sb\"}},\"Sb\":{\"type\":\"structure\",\"members\":{\"revisionType\":{},\"s3Location\":{\"type\":\"structure\",\"members\":{\"bucket\":{},\"key\":{},\"bundleType\":{},\"version\":{},\"eTag\":{}}},\"gitHubLocation\":{\"type\":\"structure\",\"members\":{\"repository\":{},\"commitId\":{}}},\"string\":{\"type\":\"structure\",\"members\":{\"content\":{},\"sha256\":{}},\"deprecated\":true,\"deprecatedMessage\":\"RawString and String revision type are deprecated, use AppSpecContent type instead.\"},\"appSpecContent\":{\"type\":\"structure\",\"members\":{\"content\":{},\"sha256\":{}}}}},\"Su\":{\"type\":\"structure\",\"members\":{\"description\":{},\"deploymentGroups\":{\"shape\":\"Sw\"},\"firstUsedTime\":{\"type\":\"timestamp\"},\"lastUsedTime\":{\"type\":\"timestamp\"},\"registerTime\":{\"type\":\"timestamp\"}}},\"Sw\":{\"type\":\"list\",\"member\":{}},\"S10\":{\"type\":\"list\",\"member\":{}},\"S13\":{\"type\":\"structure\",\"members\":{\"applicationId\":{},\"applicationName\":{},\"createTime\":{\"type\":\"timestamp\"},\"linkedToGitHub\":{\"type\":\"boolean\"},\"gitHubAccountName\":{},\"computePlatform\":{}}},\"S1b\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"deploymentGroupId\":{},\"deploymentGroupName\":{},\"deploymentConfigName\":{},\"ec2TagFilters\":{\"shape\":\"S1e\"},\"onPremisesInstanceTagFilters\":{\"shape\":\"S1h\"},\"autoScalingGroups\":{\"shape\":\"S1k\"},\"serviceRoleArn\":{},\"targetRevision\":{\"shape\":\"Sb\"},\"triggerConfigurations\":{\"shape\":\"S1p\"},\"alarmConfiguration\":{\"shape\":\"S1v\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"deploymentStyle\":{\"shape\":\"S22\"},\"outdatedInstancesStrategy\":{},\"blueGreenDeploymentConfiguration\":{\"shape\":\"S26\"},\"loadBalancerInfo\":{\"shape\":\"S2e\"},\"lastSuccessfulDeployment\":{\"shape\":\"S2q\"},\"lastAttemptedDeployment\":{\"shape\":\"S2q\"},\"ec2TagSet\":{\"shape\":\"S2t\"},\"onPremisesTagSet\":{\"shape\":\"S2v\"},\"computePlatform\":{},\"ecsServices\":{\"shape\":\"S2x\"}}},\"S1e\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"Key\":{},\"Value\":{},\"Type\":{}}}},\"S1h\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"Key\":{},\"Value\":{},\"Type\":{}}}},\"S1k\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"name\":{},\"hook\":{}}}},\"S1p\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"triggerName\":{},\"triggerTargetArn\":{},\"triggerEvents\":{\"type\":\"list\",\"member\":{}}}}},\"S1v\":{\"type\":\"structure\",\"members\":{\"enabled\":{\"type\":\"boolean\"},\"ignorePollAlarmFailure\":{\"type\":\"boolean\"},\"alarms\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"name\":{}}}}}},\"S1z\":{\"type\":\"structure\",\"members\":{\"enabled\":{\"type\":\"boolean\"},\"events\":{\"type\":\"list\",\"member\":{}}}},\"S22\":{\"type\":\"structure\",\"members\":{\"deploymentType\":{},\"deploymentOption\":{}}},\"S26\":{\"type\":\"structure\",\"members\":{\"terminateBlueInstancesOnDeploymentSuccess\":{\"type\":\"structure\",\"members\":{\"action\":{},\"terminationWaitTimeInMinutes\":{\"type\":\"integer\"}}},\"deploymentReadyOption\":{\"type\":\"structure\",\"members\":{\"actionOnTimeout\":{},\"waitTimeInMinutes\":{\"type\":\"integer\"}}},\"greenFleetProvisioningOption\":{\"type\":\"structure\",\"members\":{\"action\":{}}}}},\"S2e\":{\"type\":\"structure\",\"members\":{\"elbInfoList\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"name\":{}}}},\"targetGroupInfoList\":{\"shape\":\"S2i\"},\"targetGroupPairInfoList\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"targetGroups\":{\"shape\":\"S2i\"},\"prodTrafficRoute\":{\"shape\":\"S2n\"},\"testTrafficRoute\":{\"shape\":\"S2n\"}}}}}},\"S2i\":{\"type\":\"list\",\"member\":{\"shape\":\"S2j\"}},\"S2j\":{\"type\":\"structure\",\"members\":{\"name\":{}}},\"S2n\":{\"type\":\"structure\",\"members\":{\"listenerArns\":{\"type\":\"list\",\"member\":{}}}},\"S2q\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"status\":{},\"endTime\":{\"type\":\"timestamp\"},\"createTime\":{\"type\":\"timestamp\"}}},\"S2t\":{\"type\":\"structure\",\"members\":{\"ec2TagSetList\":{\"type\":\"list\",\"member\":{\"shape\":\"S1e\"}}}},\"S2v\":{\"type\":\"structure\",\"members\":{\"onPremisesTagSetList\":{\"type\":\"list\",\"member\":{\"shape\":\"S1h\"}}}},\"S2x\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"serviceName\":{},\"clusterName\":{}}}},\"S32\":{\"type\":\"list\",\"member\":{}},\"S36\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"instanceId\":{},\"status\":{\"shape\":\"S37\"},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S38\"},\"instanceType\":{}},\"deprecated\":true,\"deprecatedMessage\":\"InstanceSummary is deprecated, use DeploymentTarget instead.\"},\"S37\":{\"type\":\"string\",\"deprecated\":true,\"deprecatedMessage\":\"InstanceStatus is deprecated, use TargetStatus instead.\"},\"S38\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"lifecycleEventName\":{},\"diagnostics\":{\"type\":\"structure\",\"members\":{\"errorCode\":{},\"scriptName\":{},\"message\":{},\"logTail\":{}}},\"startTime\":{\"type\":\"timestamp\"},\"endTime\":{\"type\":\"timestamp\"},\"status\":{}}}},\"S3j\":{\"type\":\"list\",\"member\":{}},\"S3n\":{\"type\":\"structure\",\"members\":{\"deploymentTargetType\":{},\"instanceTarget\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{},\"targetArn\":{},\"status\":{},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S38\"},\"instanceLabel\":{}}},\"lambdaTarget\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{},\"targetArn\":{},\"status\":{},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S38\"},\"lambdaFunctionInfo\":{\"type\":\"structure\",\"members\":{\"functionName\":{},\"functionAlias\":{},\"currentVersion\":{},\"targetVersion\":{},\"targetVersionWeight\":{\"type\":\"double\"}}}}},\"ecsTarget\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{},\"targetArn\":{},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S38\"},\"status\":{},\"taskSetsInfo\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"identifer\":{},\"desiredCount\":{\"type\":\"long\"},\"pendingCount\":{\"type\":\"long\"},\"runningCount\":{\"type\":\"long\"},\"status\":{},\"trafficWeight\":{\"type\":\"double\"},\"targetGroup\":{\"shape\":\"S2j\"},\"taskSetLabel\":{}}}}}},\"cloudFormationTarget\":{\"type\":\"structure\",\"members\":{\"deploymentId\":{},\"targetId\":{},\"lastUpdatedAt\":{\"type\":\"timestamp\"},\"lifecycleEvents\":{\"shape\":\"S38\"},\"status\":{},\"resourceType\":{},\"targetVersionWeight\":{\"type\":\"double\"}}}}},\"S49\":{\"type\":\"list\",\"member\":{}},\"S4c\":{\"type\":\"structure\",\"members\":{\"applicationName\":{},\"deploymentGroupName\":{},\"deploymentConfigName\":{},\"deploymentId\":{},\"previousRevision\":{\"shape\":\"Sb\"},\"revision\":{\"shape\":\"Sb\"},\"status\":{},\"errorInformation\":{\"type\":\"structure\",\"members\":{\"code\":{},\"message\":{}}},\"createTime\":{\"type\":\"timestamp\"},\"startTime\":{\"type\":\"timestamp\"},\"completeTime\":{\"type\":\"timestamp\"},\"deploymentOverview\":{\"type\":\"structure\",\"members\":{\"Pending\":{\"type\":\"long\"},\"InProgress\":{\"type\":\"long\"},\"Succeeded\":{\"type\":\"long\"},\"Failed\":{\"type\":\"long\"},\"Skipped\":{\"type\":\"long\"},\"Ready\":{\"type\":\"long\"}}},\"description\":{},\"creator\":{},\"ignoreApplicationStopFailures\":{\"type\":\"boolean\"},\"autoRollbackConfiguration\":{\"shape\":\"S1z\"},\"updateOutdatedInstancesOnly\":{\"type\":\"boolean\"},\"rollbackInfo\":{\"type\":\"structure\",\"members\":{\"rollbackDeploymentId\":{},\"rollbackTriggeringDeploymentId\":{},\"rollbackMessage\":{}}},\"deploymentStyle\":{\"shape\":\"S22\"},\"targetInstances\":{\"shape\":\"S4j\"},\"instanceTerminationWaitTimeStarted\":{\"type\":\"boolean\"},\"blueGreenDeploymentConfiguration\":{\"shape\":\"S26\"},\"loadBalancerInfo\":{\"shape\":\"S2e\"},\"additionalDeploymentStatusInfo\":{\"type\":\"string\",\"deprecated\":true,\"deprecatedMessage\":\"AdditionalDeploymentStatusInfo is deprecated, use DeploymentStatusMessageList instead.\"},\"fileExistsBehavior\":{},\"deploymentStatusMessages\":{\"type\":\"list\",\"member\":{}},\"computePlatform\":{},\"externalId\":{},\"relatedDeployments\":{\"type\":\"structure\",\"members\":{\"autoUpdateOutdatedInstancesRootDeploymentId\":{},\"autoUpdateOutdatedInstancesDeploymentIds\":{\"shape\":\"S49\"}}}}},\"S4j\":{\"type\":\"structure\",\"members\":{\"tagFilters\":{\"shape\":\"S1e\"},\"autoScalingGroups\":{\"shape\":\"S4k\"},\"ec2TagSet\":{\"shape\":\"S2t\"}}},\"S4k\":{\"type\":\"list\",\"member\":{}},\"S4t\":{\"type\":\"structure\",\"members\":{\"instanceName\":{},\"iamSessionArn\":{},\"iamUserArn\":{},\"instanceArn\":{},\"registerTime\":{\"type\":\"timestamp\"},\"deregisterTime\":{\"type\":\"timestamp\"},\"tags\":{\"shape\":\"S2\"}}},\"S54\":{\"type\":\"structure\",\"members\":{\"type\":{},\"value\":{\"type\":\"integer\"}}},\"S57\":{\"type\":\"structure\",\"members\":{\"type\":{},\"timeBasedCanary\":{\"type\":\"structure\",\"members\":{\"canaryPercentage\":{\"type\":\"integer\"},\"canaryInterval\":{\"type\":\"integer\"}}},\"timeBasedLinear\":{\"type\":\"structure\",\"members\":{\"linearPercentage\":{\"type\":\"integer\"},\"linearInterval\":{\"type\":\"integer\"}}}}}}}");
 
 /***/ }),
 
@@ -49880,7 +50071,7 @@ module.exports = JSON.parse("{\"V\":{\"DeploymentSuccessful\":{\"delay\":15,\"op
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"version\":\"2.0\",\"metadata\":{\"apiVersion\":\"2014-06-30\",\"endpointPrefix\":\"cognito-identity\",\"jsonVersion\":\"1.1\",\"protocol\":\"json\",\"serviceFullName\":\"Amazon Cognito Identity\",\"serviceId\":\"Cognito Identity\",\"signatureVersion\":\"v4\",\"targetPrefix\":\"AWSCognitoIdentityService\",\"uid\":\"cognito-identity-2014-06-30\"},\"operations\":{\"CreateIdentityPool\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolName\",\"AllowUnauthenticatedIdentities\"],\"members\":{\"IdentityPoolName\":{},\"AllowUnauthenticatedIdentities\":{\"type\":\"boolean\"},\"AllowClassicFlow\":{\"type\":\"boolean\"},\"SupportedLoginProviders\":{\"shape\":\"S5\"},\"DeveloperProviderName\":{},\"OpenIdConnectProviderARNs\":{\"shape\":\"S9\"},\"CognitoIdentityProviders\":{\"shape\":\"Sb\"},\"SamlProviderARNs\":{\"shape\":\"Sg\"},\"IdentityPoolTags\":{\"shape\":\"Sh\"}}},\"output\":{\"shape\":\"Sk\"}},\"DeleteIdentities\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityIdsToDelete\"],\"members\":{\"IdentityIdsToDelete\":{\"type\":\"list\",\"member\":{}}}},\"output\":{\"type\":\"structure\",\"members\":{\"UnprocessedIdentityIds\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"ErrorCode\":{}}}}}}},\"DeleteIdentityPool\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"IdentityPoolId\":{}}}},\"DescribeIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\"],\"members\":{\"IdentityId\":{}}},\"output\":{\"shape\":\"Sv\"}},\"DescribeIdentityPool\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"IdentityPoolId\":{}}},\"output\":{\"shape\":\"Sk\"}},\"GetCredentialsForIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\"],\"members\":{\"IdentityId\":{},\"Logins\":{\"shape\":\"S10\"},\"CustomRoleArn\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"Credentials\":{\"type\":\"structure\",\"members\":{\"AccessKeyId\":{},\"SecretKey\":{},\"SessionToken\":{},\"Expiration\":{\"type\":\"timestamp\"}}}}},\"authtype\":\"none\"},\"GetId\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"AccountId\":{},\"IdentityPoolId\":{},\"Logins\":{\"shape\":\"S10\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{}}},\"authtype\":\"none\"},\"GetIdentityPoolRoles\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"IdentityPoolId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityPoolId\":{},\"Roles\":{\"shape\":\"S1c\"},\"RoleMappings\":{\"shape\":\"S1e\"}}}},\"GetOpenIdToken\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\"],\"members\":{\"IdentityId\":{},\"Logins\":{\"shape\":\"S10\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"Token\":{}}},\"authtype\":\"none\"},\"GetOpenIdTokenForDeveloperIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"Logins\"],\"members\":{\"IdentityPoolId\":{},\"IdentityId\":{},\"Logins\":{\"shape\":\"S10\"},\"TokenDuration\":{\"type\":\"long\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"Token\":{}}}},\"ListIdentities\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"MaxResults\"],\"members\":{\"IdentityPoolId\":{},\"MaxResults\":{\"type\":\"integer\"},\"NextToken\":{},\"HideDisabled\":{\"type\":\"boolean\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityPoolId\":{},\"Identities\":{\"type\":\"list\",\"member\":{\"shape\":\"Sv\"}},\"NextToken\":{}}}},\"ListIdentityPools\":{\"input\":{\"type\":\"structure\",\"required\":[\"MaxResults\"],\"members\":{\"MaxResults\":{\"type\":\"integer\"},\"NextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityPools\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"IdentityPoolId\":{},\"IdentityPoolName\":{}}}},\"NextToken\":{}}}},\"ListTagsForResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\"],\"members\":{\"ResourceArn\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"Tags\":{\"shape\":\"Sh\"}}}},\"LookupDeveloperIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"IdentityPoolId\":{},\"IdentityId\":{},\"DeveloperUserIdentifier\":{},\"MaxResults\":{\"type\":\"integer\"},\"NextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"DeveloperUserIdentifierList\":{\"type\":\"list\",\"member\":{}},\"NextToken\":{}}}},\"MergeDeveloperIdentities\":{\"input\":{\"type\":\"structure\",\"required\":[\"SourceUserIdentifier\",\"DestinationUserIdentifier\",\"DeveloperProviderName\",\"IdentityPoolId\"],\"members\":{\"SourceUserIdentifier\":{},\"DestinationUserIdentifier\":{},\"DeveloperProviderName\":{},\"IdentityPoolId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{}}}},\"SetIdentityPoolRoles\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"Roles\"],\"members\":{\"IdentityPoolId\":{},\"Roles\":{\"shape\":\"S1c\"},\"RoleMappings\":{\"shape\":\"S1e\"}}}},\"TagResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\",\"Tags\"],\"members\":{\"ResourceArn\":{},\"Tags\":{\"shape\":\"Sh\"}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"UnlinkDeveloperIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\",\"IdentityPoolId\",\"DeveloperProviderName\",\"DeveloperUserIdentifier\"],\"members\":{\"IdentityId\":{},\"IdentityPoolId\":{},\"DeveloperProviderName\":{},\"DeveloperUserIdentifier\":{}}}},\"UnlinkIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\",\"Logins\",\"LoginsToRemove\"],\"members\":{\"IdentityId\":{},\"Logins\":{\"shape\":\"S10\"},\"LoginsToRemove\":{\"shape\":\"Sw\"}}},\"authtype\":\"none\"},\"UntagResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\",\"TagKeys\"],\"members\":{\"ResourceArn\":{},\"TagKeys\":{\"type\":\"list\",\"member\":{}}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"UpdateIdentityPool\":{\"input\":{\"shape\":\"Sk\"},\"output\":{\"shape\":\"Sk\"}}},\"shapes\":{\"S5\":{\"type\":\"map\",\"key\":{},\"value\":{}},\"S9\":{\"type\":\"list\",\"member\":{}},\"Sb\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"ProviderName\":{},\"ClientId\":{},\"ServerSideTokenCheck\":{\"type\":\"boolean\"}}}},\"Sg\":{\"type\":\"list\",\"member\":{}},\"Sh\":{\"type\":\"map\",\"key\":{},\"value\":{}},\"Sk\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"IdentityPoolName\",\"AllowUnauthenticatedIdentities\"],\"members\":{\"IdentityPoolId\":{},\"IdentityPoolName\":{},\"AllowUnauthenticatedIdentities\":{\"type\":\"boolean\"},\"AllowClassicFlow\":{\"type\":\"boolean\"},\"SupportedLoginProviders\":{\"shape\":\"S5\"},\"DeveloperProviderName\":{},\"OpenIdConnectProviderARNs\":{\"shape\":\"S9\"},\"CognitoIdentityProviders\":{\"shape\":\"Sb\"},\"SamlProviderARNs\":{\"shape\":\"Sg\"},\"IdentityPoolTags\":{\"shape\":\"Sh\"}}},\"Sv\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"Logins\":{\"shape\":\"Sw\"},\"CreationDate\":{\"type\":\"timestamp\"},\"LastModifiedDate\":{\"type\":\"timestamp\"}}},\"Sw\":{\"type\":\"list\",\"member\":{}},\"S10\":{\"type\":\"map\",\"key\":{},\"value\":{}},\"S1c\":{\"type\":\"map\",\"key\":{},\"value\":{}},\"S1e\":{\"type\":\"map\",\"key\":{},\"value\":{\"type\":\"structure\",\"required\":[\"Type\"],\"members\":{\"Type\":{},\"AmbiguousRoleResolution\":{},\"RulesConfiguration\":{\"type\":\"structure\",\"required\":[\"Rules\"],\"members\":{\"Rules\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"required\":[\"Claim\",\"MatchType\",\"Value\",\"RoleARN\"],\"members\":{\"Claim\":{},\"MatchType\":{},\"Value\":{},\"RoleARN\":{}}}}}}}}}}}");
+module.exports = JSON.parse("{\"version\":\"2.0\",\"metadata\":{\"apiVersion\":\"2014-06-30\",\"endpointPrefix\":\"cognito-identity\",\"jsonVersion\":\"1.1\",\"protocol\":\"json\",\"serviceFullName\":\"Amazon Cognito Identity\",\"serviceId\":\"Cognito Identity\",\"signatureVersion\":\"v4\",\"targetPrefix\":\"AWSCognitoIdentityService\",\"uid\":\"cognito-identity-2014-06-30\"},\"operations\":{\"CreateIdentityPool\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolName\",\"AllowUnauthenticatedIdentities\"],\"members\":{\"IdentityPoolName\":{},\"AllowUnauthenticatedIdentities\":{\"type\":\"boolean\"},\"AllowClassicFlow\":{\"type\":\"boolean\"},\"SupportedLoginProviders\":{\"shape\":\"S5\"},\"DeveloperProviderName\":{},\"OpenIdConnectProviderARNs\":{\"shape\":\"S9\"},\"CognitoIdentityProviders\":{\"shape\":\"Sb\"},\"SamlProviderARNs\":{\"shape\":\"Sg\"},\"IdentityPoolTags\":{\"shape\":\"Sh\"}}},\"output\":{\"shape\":\"Sk\"}},\"DeleteIdentities\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityIdsToDelete\"],\"members\":{\"IdentityIdsToDelete\":{\"type\":\"list\",\"member\":{}}}},\"output\":{\"type\":\"structure\",\"members\":{\"UnprocessedIdentityIds\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"ErrorCode\":{}}}}}}},\"DeleteIdentityPool\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"IdentityPoolId\":{}}}},\"DescribeIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\"],\"members\":{\"IdentityId\":{}}},\"output\":{\"shape\":\"Sv\"}},\"DescribeIdentityPool\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"IdentityPoolId\":{}}},\"output\":{\"shape\":\"Sk\"}},\"GetCredentialsForIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\"],\"members\":{\"IdentityId\":{},\"Logins\":{\"shape\":\"S10\"},\"CustomRoleArn\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"Credentials\":{\"type\":\"structure\",\"members\":{\"AccessKeyId\":{},\"SecretKey\":{},\"SessionToken\":{},\"Expiration\":{\"type\":\"timestamp\"}}}}},\"authtype\":\"none\"},\"GetId\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"AccountId\":{},\"IdentityPoolId\":{},\"Logins\":{\"shape\":\"S10\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{}}},\"authtype\":\"none\"},\"GetIdentityPoolRoles\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"IdentityPoolId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityPoolId\":{},\"Roles\":{\"shape\":\"S1c\"},\"RoleMappings\":{\"shape\":\"S1e\"}}}},\"GetOpenIdToken\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\"],\"members\":{\"IdentityId\":{},\"Logins\":{\"shape\":\"S10\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"Token\":{}}},\"authtype\":\"none\"},\"GetOpenIdTokenForDeveloperIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"Logins\"],\"members\":{\"IdentityPoolId\":{},\"IdentityId\":{},\"Logins\":{\"shape\":\"S10\"},\"PrincipalTags\":{\"shape\":\"S1s\"},\"TokenDuration\":{\"type\":\"long\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"Token\":{}}}},\"GetPrincipalTagAttributeMap\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"IdentityProviderName\"],\"members\":{\"IdentityPoolId\":{},\"IdentityProviderName\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityPoolId\":{},\"IdentityProviderName\":{},\"UseDefaults\":{\"type\":\"boolean\"},\"PrincipalTags\":{\"shape\":\"S1s\"}}}},\"ListIdentities\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"MaxResults\"],\"members\":{\"IdentityPoolId\":{},\"MaxResults\":{\"type\":\"integer\"},\"NextToken\":{},\"HideDisabled\":{\"type\":\"boolean\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityPoolId\":{},\"Identities\":{\"type\":\"list\",\"member\":{\"shape\":\"Sv\"}},\"NextToken\":{}}}},\"ListIdentityPools\":{\"input\":{\"type\":\"structure\",\"required\":[\"MaxResults\"],\"members\":{\"MaxResults\":{\"type\":\"integer\"},\"NextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityPools\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"IdentityPoolId\":{},\"IdentityPoolName\":{}}}},\"NextToken\":{}}}},\"ListTagsForResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\"],\"members\":{\"ResourceArn\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"Tags\":{\"shape\":\"Sh\"}}}},\"LookupDeveloperIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\"],\"members\":{\"IdentityPoolId\":{},\"IdentityId\":{},\"DeveloperUserIdentifier\":{},\"MaxResults\":{\"type\":\"integer\"},\"NextToken\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"DeveloperUserIdentifierList\":{\"type\":\"list\",\"member\":{}},\"NextToken\":{}}}},\"MergeDeveloperIdentities\":{\"input\":{\"type\":\"structure\",\"required\":[\"SourceUserIdentifier\",\"DestinationUserIdentifier\",\"DeveloperProviderName\",\"IdentityPoolId\"],\"members\":{\"SourceUserIdentifier\":{},\"DestinationUserIdentifier\":{},\"DeveloperProviderName\":{},\"IdentityPoolId\":{}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{}}}},\"SetIdentityPoolRoles\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"Roles\"],\"members\":{\"IdentityPoolId\":{},\"Roles\":{\"shape\":\"S1c\"},\"RoleMappings\":{\"shape\":\"S1e\"}}}},\"SetPrincipalTagAttributeMap\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"IdentityProviderName\"],\"members\":{\"IdentityPoolId\":{},\"IdentityProviderName\":{},\"UseDefaults\":{\"type\":\"boolean\"},\"PrincipalTags\":{\"shape\":\"S1s\"}}},\"output\":{\"type\":\"structure\",\"members\":{\"IdentityPoolId\":{},\"IdentityProviderName\":{},\"UseDefaults\":{\"type\":\"boolean\"},\"PrincipalTags\":{\"shape\":\"S1s\"}}}},\"TagResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\",\"Tags\"],\"members\":{\"ResourceArn\":{},\"Tags\":{\"shape\":\"Sh\"}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"UnlinkDeveloperIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\",\"IdentityPoolId\",\"DeveloperProviderName\",\"DeveloperUserIdentifier\"],\"members\":{\"IdentityId\":{},\"IdentityPoolId\":{},\"DeveloperProviderName\":{},\"DeveloperUserIdentifier\":{}}}},\"UnlinkIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"IdentityId\",\"Logins\",\"LoginsToRemove\"],\"members\":{\"IdentityId\":{},\"Logins\":{\"shape\":\"S10\"},\"LoginsToRemove\":{\"shape\":\"Sw\"}}},\"authtype\":\"none\"},\"UntagResource\":{\"input\":{\"type\":\"structure\",\"required\":[\"ResourceArn\",\"TagKeys\"],\"members\":{\"ResourceArn\":{},\"TagKeys\":{\"type\":\"list\",\"member\":{}}}},\"output\":{\"type\":\"structure\",\"members\":{}}},\"UpdateIdentityPool\":{\"input\":{\"shape\":\"Sk\"},\"output\":{\"shape\":\"Sk\"}}},\"shapes\":{\"S5\":{\"type\":\"map\",\"key\":{},\"value\":{}},\"S9\":{\"type\":\"list\",\"member\":{}},\"Sb\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"ProviderName\":{},\"ClientId\":{},\"ServerSideTokenCheck\":{\"type\":\"boolean\"}}}},\"Sg\":{\"type\":\"list\",\"member\":{}},\"Sh\":{\"type\":\"map\",\"key\":{},\"value\":{}},\"Sk\":{\"type\":\"structure\",\"required\":[\"IdentityPoolId\",\"IdentityPoolName\",\"AllowUnauthenticatedIdentities\"],\"members\":{\"IdentityPoolId\":{},\"IdentityPoolName\":{},\"AllowUnauthenticatedIdentities\":{\"type\":\"boolean\"},\"AllowClassicFlow\":{\"type\":\"boolean\"},\"SupportedLoginProviders\":{\"shape\":\"S5\"},\"DeveloperProviderName\":{},\"OpenIdConnectProviderARNs\":{\"shape\":\"S9\"},\"CognitoIdentityProviders\":{\"shape\":\"Sb\"},\"SamlProviderARNs\":{\"shape\":\"Sg\"},\"IdentityPoolTags\":{\"shape\":\"Sh\"}}},\"Sv\":{\"type\":\"structure\",\"members\":{\"IdentityId\":{},\"Logins\":{\"shape\":\"Sw\"},\"CreationDate\":{\"type\":\"timestamp\"},\"LastModifiedDate\":{\"type\":\"timestamp\"}}},\"Sw\":{\"type\":\"list\",\"member\":{}},\"S10\":{\"type\":\"map\",\"key\":{},\"value\":{}},\"S1c\":{\"type\":\"map\",\"key\":{},\"value\":{}},\"S1e\":{\"type\":\"map\",\"key\":{},\"value\":{\"type\":\"structure\",\"required\":[\"Type\"],\"members\":{\"Type\":{},\"AmbiguousRoleResolution\":{},\"RulesConfiguration\":{\"type\":\"structure\",\"required\":[\"Rules\"],\"members\":{\"Rules\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"required\":[\"Claim\",\"MatchType\",\"Value\",\"RoleARN\"],\"members\":{\"Claim\":{},\"MatchType\":{},\"Value\":{},\"RoleARN\":{}}}}}}}}},\"S1s\":{\"type\":\"map\",\"key\":{},\"value\":{}}}}");
 
 /***/ }),
 
@@ -49896,7 +50087,7 @@ module.exports = JSON.parse("{\"o\":{\"ListIdentityPools\":{\"input_token\":\"Ne
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"acm\":{\"name\":\"ACM\",\"cors\":true},\"apigateway\":{\"name\":\"APIGateway\",\"cors\":true},\"applicationautoscaling\":{\"prefix\":\"application-autoscaling\",\"name\":\"ApplicationAutoScaling\",\"cors\":true},\"appstream\":{\"name\":\"AppStream\"},\"autoscaling\":{\"name\":\"AutoScaling\",\"cors\":true},\"batch\":{\"name\":\"Batch\"},\"budgets\":{\"name\":\"Budgets\"},\"clouddirectory\":{\"name\":\"CloudDirectory\",\"versions\":[\"2016-05-10*\"]},\"cloudformation\":{\"name\":\"CloudFormation\",\"cors\":true},\"cloudfront\":{\"name\":\"CloudFront\",\"versions\":[\"2013-05-12*\",\"2013-11-11*\",\"2014-05-31*\",\"2014-10-21*\",\"2014-11-06*\",\"2015-04-17*\",\"2015-07-27*\",\"2015-09-17*\",\"2016-01-13*\",\"2016-01-28*\",\"2016-08-01*\",\"2016-08-20*\",\"2016-09-07*\",\"2016-09-29*\",\"2016-11-25*\",\"2017-03-25*\",\"2017-10-30*\",\"2018-06-18*\",\"2018-11-05*\",\"2019-03-26*\"],\"cors\":true},\"cloudhsm\":{\"name\":\"CloudHSM\",\"cors\":true},\"cloudsearch\":{\"name\":\"CloudSearch\"},\"cloudsearchdomain\":{\"name\":\"CloudSearchDomain\"},\"cloudtrail\":{\"name\":\"CloudTrail\",\"cors\":true},\"cloudwatch\":{\"prefix\":\"monitoring\",\"name\":\"CloudWatch\",\"cors\":true},\"cloudwatchevents\":{\"prefix\":\"events\",\"name\":\"CloudWatchEvents\",\"versions\":[\"2014-02-03*\"],\"cors\":true},\"cloudwatchlogs\":{\"prefix\":\"logs\",\"name\":\"CloudWatchLogs\",\"cors\":true},\"codebuild\":{\"name\":\"CodeBuild\",\"cors\":true},\"codecommit\":{\"name\":\"CodeCommit\",\"cors\":true},\"codedeploy\":{\"name\":\"CodeDeploy\",\"cors\":true},\"codepipeline\":{\"name\":\"CodePipeline\",\"cors\":true},\"cognitoidentity\":{\"prefix\":\"cognito-identity\",\"name\":\"CognitoIdentity\",\"cors\":true},\"cognitoidentityserviceprovider\":{\"prefix\":\"cognito-idp\",\"name\":\"CognitoIdentityServiceProvider\",\"cors\":true},\"cognitosync\":{\"prefix\":\"cognito-sync\",\"name\":\"CognitoSync\",\"cors\":true},\"configservice\":{\"prefix\":\"config\",\"name\":\"ConfigService\",\"cors\":true},\"cur\":{\"name\":\"CUR\",\"cors\":true},\"datapipeline\":{\"name\":\"DataPipeline\"},\"devicefarm\":{\"name\":\"DeviceFarm\",\"cors\":true},\"directconnect\":{\"name\":\"DirectConnect\",\"cors\":true},\"directoryservice\":{\"prefix\":\"ds\",\"name\":\"DirectoryService\"},\"discovery\":{\"name\":\"Discovery\"},\"dms\":{\"name\":\"DMS\"},\"dynamodb\":{\"name\":\"DynamoDB\",\"cors\":true},\"dynamodbstreams\":{\"prefix\":\"streams.dynamodb\",\"name\":\"DynamoDBStreams\",\"cors\":true},\"ec2\":{\"name\":\"EC2\",\"versions\":[\"2013-06-15*\",\"2013-10-15*\",\"2014-02-01*\",\"2014-05-01*\",\"2014-06-15*\",\"2014-09-01*\",\"2014-10-01*\",\"2015-03-01*\",\"2015-04-15*\",\"2015-10-01*\",\"2016-04-01*\",\"2016-09-15*\"],\"cors\":true},\"ecr\":{\"name\":\"ECR\",\"cors\":true},\"ecs\":{\"name\":\"ECS\",\"cors\":true},\"efs\":{\"prefix\":\"elasticfilesystem\",\"name\":\"EFS\",\"cors\":true},\"elasticache\":{\"name\":\"ElastiCache\",\"versions\":[\"2012-11-15*\",\"2014-03-24*\",\"2014-07-15*\",\"2014-09-30*\"],\"cors\":true},\"elasticbeanstalk\":{\"name\":\"ElasticBeanstalk\",\"cors\":true},\"elb\":{\"prefix\":\"elasticloadbalancing\",\"name\":\"ELB\",\"cors\":true},\"elbv2\":{\"prefix\":\"elasticloadbalancingv2\",\"name\":\"ELBv2\",\"cors\":true},\"emr\":{\"prefix\":\"elasticmapreduce\",\"name\":\"EMR\",\"cors\":true},\"es\":{\"name\":\"ES\"},\"elastictranscoder\":{\"name\":\"ElasticTranscoder\",\"cors\":true},\"firehose\":{\"name\":\"Firehose\",\"cors\":true},\"gamelift\":{\"name\":\"GameLift\",\"cors\":true},\"glacier\":{\"name\":\"Glacier\"},\"health\":{\"name\":\"Health\"},\"iam\":{\"name\":\"IAM\",\"cors\":true},\"importexport\":{\"name\":\"ImportExport\"},\"inspector\":{\"name\":\"Inspector\",\"versions\":[\"2015-08-18*\"],\"cors\":true},\"iot\":{\"name\":\"Iot\",\"cors\":true},\"iotdata\":{\"prefix\":\"iot-data\",\"name\":\"IotData\",\"cors\":true},\"kinesis\":{\"name\":\"Kinesis\",\"cors\":true},\"kinesisanalytics\":{\"name\":\"KinesisAnalytics\"},\"kms\":{\"name\":\"KMS\",\"cors\":true},\"lambda\":{\"name\":\"Lambda\",\"cors\":true},\"lexruntime\":{\"prefix\":\"runtime.lex\",\"name\":\"LexRuntime\",\"cors\":true},\"lightsail\":{\"name\":\"Lightsail\"},\"machinelearning\":{\"name\":\"MachineLearning\",\"cors\":true},\"marketplacecommerceanalytics\":{\"name\":\"MarketplaceCommerceAnalytics\",\"cors\":true},\"marketplacemetering\":{\"prefix\":\"meteringmarketplace\",\"name\":\"MarketplaceMetering\"},\"mturk\":{\"prefix\":\"mturk-requester\",\"name\":\"MTurk\",\"cors\":true},\"mobileanalytics\":{\"name\":\"MobileAnalytics\",\"cors\":true},\"opsworks\":{\"name\":\"OpsWorks\",\"cors\":true},\"opsworkscm\":{\"name\":\"OpsWorksCM\"},\"organizations\":{\"name\":\"Organizations\"},\"pinpoint\":{\"name\":\"Pinpoint\"},\"polly\":{\"name\":\"Polly\",\"cors\":true},\"rds\":{\"name\":\"RDS\",\"versions\":[\"2014-09-01*\"],\"cors\":true},\"redshift\":{\"name\":\"Redshift\",\"cors\":true},\"rekognition\":{\"name\":\"Rekognition\",\"cors\":true},\"resourcegroupstaggingapi\":{\"name\":\"ResourceGroupsTaggingAPI\"},\"route53\":{\"name\":\"Route53\",\"cors\":true},\"route53domains\":{\"name\":\"Route53Domains\",\"cors\":true},\"s3\":{\"name\":\"S3\",\"dualstackAvailable\":true,\"cors\":true},\"s3control\":{\"name\":\"S3Control\",\"dualstackAvailable\":true,\"xmlNoDefaultLists\":true},\"servicecatalog\":{\"name\":\"ServiceCatalog\",\"cors\":true},\"ses\":{\"prefix\":\"email\",\"name\":\"SES\",\"cors\":true},\"shield\":{\"name\":\"Shield\"},\"simpledb\":{\"prefix\":\"sdb\",\"name\":\"SimpleDB\"},\"sms\":{\"name\":\"SMS\"},\"snowball\":{\"name\":\"Snowball\"},\"sns\":{\"name\":\"SNS\",\"cors\":true},\"sqs\":{\"name\":\"SQS\",\"cors\":true},\"ssm\":{\"name\":\"SSM\",\"cors\":true},\"storagegateway\":{\"name\":\"StorageGateway\",\"cors\":true},\"stepfunctions\":{\"prefix\":\"states\",\"name\":\"StepFunctions\"},\"sts\":{\"name\":\"STS\",\"cors\":true},\"support\":{\"name\":\"Support\"},\"swf\":{\"name\":\"SWF\"},\"xray\":{\"name\":\"XRay\",\"cors\":true},\"waf\":{\"name\":\"WAF\",\"cors\":true},\"wafregional\":{\"prefix\":\"waf-regional\",\"name\":\"WAFRegional\"},\"workdocs\":{\"name\":\"WorkDocs\",\"cors\":true},\"workspaces\":{\"name\":\"WorkSpaces\"},\"codestar\":{\"name\":\"CodeStar\"},\"lexmodelbuildingservice\":{\"prefix\":\"lex-models\",\"name\":\"LexModelBuildingService\",\"cors\":true},\"marketplaceentitlementservice\":{\"prefix\":\"entitlement.marketplace\",\"name\":\"MarketplaceEntitlementService\"},\"athena\":{\"name\":\"Athena\"},\"greengrass\":{\"name\":\"Greengrass\"},\"dax\":{\"name\":\"DAX\"},\"migrationhub\":{\"prefix\":\"AWSMigrationHub\",\"name\":\"MigrationHub\"},\"cloudhsmv2\":{\"name\":\"CloudHSMV2\"},\"glue\":{\"name\":\"Glue\"},\"mobile\":{\"name\":\"Mobile\"},\"pricing\":{\"name\":\"Pricing\",\"cors\":true},\"costexplorer\":{\"prefix\":\"ce\",\"name\":\"CostExplorer\",\"cors\":true},\"mediaconvert\":{\"name\":\"MediaConvert\"},\"medialive\":{\"name\":\"MediaLive\"},\"mediapackage\":{\"name\":\"MediaPackage\"},\"mediastore\":{\"name\":\"MediaStore\"},\"mediastoredata\":{\"prefix\":\"mediastore-data\",\"name\":\"MediaStoreData\",\"cors\":true},\"appsync\":{\"name\":\"AppSync\"},\"guardduty\":{\"name\":\"GuardDuty\"},\"mq\":{\"name\":\"MQ\"},\"comprehend\":{\"name\":\"Comprehend\",\"cors\":true},\"iotjobsdataplane\":{\"prefix\":\"iot-jobs-data\",\"name\":\"IoTJobsDataPlane\"},\"kinesisvideoarchivedmedia\":{\"prefix\":\"kinesis-video-archived-media\",\"name\":\"KinesisVideoArchivedMedia\",\"cors\":true},\"kinesisvideomedia\":{\"prefix\":\"kinesis-video-media\",\"name\":\"KinesisVideoMedia\",\"cors\":true},\"kinesisvideo\":{\"name\":\"KinesisVideo\",\"cors\":true},\"sagemakerruntime\":{\"prefix\":\"runtime.sagemaker\",\"name\":\"SageMakerRuntime\"},\"sagemaker\":{\"name\":\"SageMaker\"},\"translate\":{\"name\":\"Translate\",\"cors\":true},\"resourcegroups\":{\"prefix\":\"resource-groups\",\"name\":\"ResourceGroups\",\"cors\":true},\"alexaforbusiness\":{\"name\":\"AlexaForBusiness\"},\"cloud9\":{\"name\":\"Cloud9\"},\"serverlessapplicationrepository\":{\"prefix\":\"serverlessrepo\",\"name\":\"ServerlessApplicationRepository\"},\"servicediscovery\":{\"name\":\"ServiceDiscovery\"},\"workmail\":{\"name\":\"WorkMail\"},\"autoscalingplans\":{\"prefix\":\"autoscaling-plans\",\"name\":\"AutoScalingPlans\"},\"transcribeservice\":{\"prefix\":\"transcribe\",\"name\":\"TranscribeService\"},\"connect\":{\"name\":\"Connect\",\"cors\":true},\"acmpca\":{\"prefix\":\"acm-pca\",\"name\":\"ACMPCA\"},\"fms\":{\"name\":\"FMS\"},\"secretsmanager\":{\"name\":\"SecretsManager\",\"cors\":true},\"iotanalytics\":{\"name\":\"IoTAnalytics\",\"cors\":true},\"iot1clickdevicesservice\":{\"prefix\":\"iot1click-devices\",\"name\":\"IoT1ClickDevicesService\"},\"iot1clickprojects\":{\"prefix\":\"iot1click-projects\",\"name\":\"IoT1ClickProjects\"},\"pi\":{\"name\":\"PI\"},\"neptune\":{\"name\":\"Neptune\"},\"mediatailor\":{\"name\":\"MediaTailor\"},\"eks\":{\"name\":\"EKS\"},\"macie\":{\"name\":\"Macie\"},\"dlm\":{\"name\":\"DLM\"},\"signer\":{\"name\":\"Signer\"},\"chime\":{\"name\":\"Chime\"},\"pinpointemail\":{\"prefix\":\"pinpoint-email\",\"name\":\"PinpointEmail\"},\"ram\":{\"name\":\"RAM\"},\"route53resolver\":{\"name\":\"Route53Resolver\"},\"pinpointsmsvoice\":{\"prefix\":\"sms-voice\",\"name\":\"PinpointSMSVoice\"},\"quicksight\":{\"name\":\"QuickSight\"},\"rdsdataservice\":{\"prefix\":\"rds-data\",\"name\":\"RDSDataService\"},\"amplify\":{\"name\":\"Amplify\"},\"datasync\":{\"name\":\"DataSync\"},\"robomaker\":{\"name\":\"RoboMaker\"},\"transfer\":{\"name\":\"Transfer\"},\"globalaccelerator\":{\"name\":\"GlobalAccelerator\"},\"comprehendmedical\":{\"name\":\"ComprehendMedical\",\"cors\":true},\"kinesisanalyticsv2\":{\"name\":\"KinesisAnalyticsV2\"},\"mediaconnect\":{\"name\":\"MediaConnect\"},\"fsx\":{\"name\":\"FSx\"},\"securityhub\":{\"name\":\"SecurityHub\"},\"appmesh\":{\"name\":\"AppMesh\",\"versions\":[\"2018-10-01*\"]},\"licensemanager\":{\"prefix\":\"license-manager\",\"name\":\"LicenseManager\"},\"kafka\":{\"name\":\"Kafka\"},\"apigatewaymanagementapi\":{\"name\":\"ApiGatewayManagementApi\"},\"apigatewayv2\":{\"name\":\"ApiGatewayV2\"},\"docdb\":{\"name\":\"DocDB\"},\"backup\":{\"name\":\"Backup\"},\"worklink\":{\"name\":\"WorkLink\"},\"textract\":{\"name\":\"Textract\"},\"managedblockchain\":{\"name\":\"ManagedBlockchain\"},\"mediapackagevod\":{\"prefix\":\"mediapackage-vod\",\"name\":\"MediaPackageVod\"},\"groundstation\":{\"name\":\"GroundStation\"},\"iotthingsgraph\":{\"name\":\"IoTThingsGraph\"},\"iotevents\":{\"name\":\"IoTEvents\"},\"ioteventsdata\":{\"prefix\":\"iotevents-data\",\"name\":\"IoTEventsData\"},\"personalize\":{\"name\":\"Personalize\",\"cors\":true},\"personalizeevents\":{\"prefix\":\"personalize-events\",\"name\":\"PersonalizeEvents\",\"cors\":true},\"personalizeruntime\":{\"prefix\":\"personalize-runtime\",\"name\":\"PersonalizeRuntime\",\"cors\":true},\"applicationinsights\":{\"prefix\":\"application-insights\",\"name\":\"ApplicationInsights\"},\"servicequotas\":{\"prefix\":\"service-quotas\",\"name\":\"ServiceQuotas\"},\"ec2instanceconnect\":{\"prefix\":\"ec2-instance-connect\",\"name\":\"EC2InstanceConnect\"},\"eventbridge\":{\"name\":\"EventBridge\"},\"lakeformation\":{\"name\":\"LakeFormation\"},\"forecastservice\":{\"prefix\":\"forecast\",\"name\":\"ForecastService\",\"cors\":true},\"forecastqueryservice\":{\"prefix\":\"forecastquery\",\"name\":\"ForecastQueryService\",\"cors\":true},\"qldb\":{\"name\":\"QLDB\"},\"qldbsession\":{\"prefix\":\"qldb-session\",\"name\":\"QLDBSession\"},\"workmailmessageflow\":{\"name\":\"WorkMailMessageFlow\"},\"codestarnotifications\":{\"prefix\":\"codestar-notifications\",\"name\":\"CodeStarNotifications\"},\"savingsplans\":{\"name\":\"SavingsPlans\"},\"sso\":{\"name\":\"SSO\"},\"ssooidc\":{\"prefix\":\"sso-oidc\",\"name\":\"SSOOIDC\"},\"marketplacecatalog\":{\"prefix\":\"marketplace-catalog\",\"name\":\"MarketplaceCatalog\"},\"dataexchange\":{\"name\":\"DataExchange\"},\"sesv2\":{\"name\":\"SESV2\"},\"migrationhubconfig\":{\"prefix\":\"migrationhub-config\",\"name\":\"MigrationHubConfig\"},\"connectparticipant\":{\"name\":\"ConnectParticipant\"},\"appconfig\":{\"name\":\"AppConfig\"},\"iotsecuretunneling\":{\"name\":\"IoTSecureTunneling\"},\"wafv2\":{\"name\":\"WAFV2\"},\"elasticinference\":{\"prefix\":\"elastic-inference\",\"name\":\"ElasticInference\"},\"imagebuilder\":{\"name\":\"Imagebuilder\"},\"schemas\":{\"name\":\"Schemas\"},\"accessanalyzer\":{\"name\":\"AccessAnalyzer\"},\"codegurureviewer\":{\"prefix\":\"codeguru-reviewer\",\"name\":\"CodeGuruReviewer\"},\"codeguruprofiler\":{\"name\":\"CodeGuruProfiler\"},\"computeoptimizer\":{\"prefix\":\"compute-optimizer\",\"name\":\"ComputeOptimizer\"},\"frauddetector\":{\"name\":\"FraudDetector\"},\"kendra\":{\"name\":\"Kendra\"},\"networkmanager\":{\"name\":\"NetworkManager\"},\"outposts\":{\"name\":\"Outposts\"},\"augmentedairuntime\":{\"prefix\":\"sagemaker-a2i-runtime\",\"name\":\"AugmentedAIRuntime\"},\"ebs\":{\"name\":\"EBS\"},\"kinesisvideosignalingchannels\":{\"prefix\":\"kinesis-video-signaling\",\"name\":\"KinesisVideoSignalingChannels\",\"cors\":true},\"detective\":{\"name\":\"Detective\"},\"codestarconnections\":{\"prefix\":\"codestar-connections\",\"name\":\"CodeStarconnections\"},\"synthetics\":{\"name\":\"Synthetics\"},\"iotsitewise\":{\"name\":\"IoTSiteWise\"},\"macie2\":{\"name\":\"Macie2\"},\"codeartifact\":{\"name\":\"CodeArtifact\"},\"honeycode\":{\"name\":\"Honeycode\"},\"ivs\":{\"name\":\"IVS\"},\"braket\":{\"name\":\"Braket\"},\"identitystore\":{\"name\":\"IdentityStore\"},\"appflow\":{\"name\":\"Appflow\"},\"redshiftdata\":{\"prefix\":\"redshift-data\",\"name\":\"RedshiftData\"},\"ssoadmin\":{\"prefix\":\"sso-admin\",\"name\":\"SSOAdmin\"},\"timestreamquery\":{\"prefix\":\"timestream-query\",\"name\":\"TimestreamQuery\"},\"timestreamwrite\":{\"prefix\":\"timestream-write\",\"name\":\"TimestreamWrite\"},\"s3outposts\":{\"name\":\"S3Outposts\"},\"databrew\":{\"name\":\"DataBrew\"},\"servicecatalogappregistry\":{\"prefix\":\"servicecatalog-appregistry\",\"name\":\"ServiceCatalogAppRegistry\"},\"networkfirewall\":{\"prefix\":\"network-firewall\",\"name\":\"NetworkFirewall\"},\"mwaa\":{\"name\":\"MWAA\"},\"amplifybackend\":{\"name\":\"AmplifyBackend\"},\"appintegrations\":{\"name\":\"AppIntegrations\"},\"connectcontactlens\":{\"prefix\":\"connect-contact-lens\",\"name\":\"ConnectContactLens\"},\"devopsguru\":{\"prefix\":\"devops-guru\",\"name\":\"DevOpsGuru\"},\"ecrpublic\":{\"prefix\":\"ecr-public\",\"name\":\"ECRPUBLIC\"},\"lookoutvision\":{\"name\":\"LookoutVision\"},\"sagemakerfeaturestoreruntime\":{\"prefix\":\"sagemaker-featurestore-runtime\",\"name\":\"SageMakerFeatureStoreRuntime\"},\"customerprofiles\":{\"prefix\":\"customer-profiles\",\"name\":\"CustomerProfiles\"},\"auditmanager\":{\"name\":\"AuditManager\"},\"emrcontainers\":{\"prefix\":\"emr-containers\",\"name\":\"EMRcontainers\"},\"healthlake\":{\"name\":\"HealthLake\"},\"sagemakeredge\":{\"prefix\":\"sagemaker-edge\",\"name\":\"SagemakerEdge\"},\"amp\":{\"name\":\"Amp\"},\"greengrassv2\":{\"name\":\"GreengrassV2\"},\"iotdeviceadvisor\":{\"name\":\"IotDeviceAdvisor\"},\"iotfleethub\":{\"name\":\"IoTFleetHub\"},\"iotwireless\":{\"name\":\"IoTWireless\"},\"location\":{\"name\":\"Location\"},\"wellarchitected\":{\"name\":\"WellArchitected\"}}");
+module.exports = JSON.parse("{\"acm\":{\"name\":\"ACM\",\"cors\":true},\"apigateway\":{\"name\":\"APIGateway\",\"cors\":true},\"applicationautoscaling\":{\"prefix\":\"application-autoscaling\",\"name\":\"ApplicationAutoScaling\",\"cors\":true},\"appstream\":{\"name\":\"AppStream\"},\"autoscaling\":{\"name\":\"AutoScaling\",\"cors\":true},\"batch\":{\"name\":\"Batch\"},\"budgets\":{\"name\":\"Budgets\"},\"clouddirectory\":{\"name\":\"CloudDirectory\",\"versions\":[\"2016-05-10*\"]},\"cloudformation\":{\"name\":\"CloudFormation\",\"cors\":true},\"cloudfront\":{\"name\":\"CloudFront\",\"versions\":[\"2013-05-12*\",\"2013-11-11*\",\"2014-05-31*\",\"2014-10-21*\",\"2014-11-06*\",\"2015-04-17*\",\"2015-07-27*\",\"2015-09-17*\",\"2016-01-13*\",\"2016-01-28*\",\"2016-08-01*\",\"2016-08-20*\",\"2016-09-07*\",\"2016-09-29*\",\"2016-11-25*\",\"2017-03-25*\",\"2017-10-30*\",\"2018-06-18*\",\"2018-11-05*\",\"2019-03-26*\"],\"cors\":true},\"cloudhsm\":{\"name\":\"CloudHSM\",\"cors\":true},\"cloudsearch\":{\"name\":\"CloudSearch\"},\"cloudsearchdomain\":{\"name\":\"CloudSearchDomain\"},\"cloudtrail\":{\"name\":\"CloudTrail\",\"cors\":true},\"cloudwatch\":{\"prefix\":\"monitoring\",\"name\":\"CloudWatch\",\"cors\":true},\"cloudwatchevents\":{\"prefix\":\"events\",\"name\":\"CloudWatchEvents\",\"versions\":[\"2014-02-03*\"],\"cors\":true},\"cloudwatchlogs\":{\"prefix\":\"logs\",\"name\":\"CloudWatchLogs\",\"cors\":true},\"codebuild\":{\"name\":\"CodeBuild\",\"cors\":true},\"codecommit\":{\"name\":\"CodeCommit\",\"cors\":true},\"codedeploy\":{\"name\":\"CodeDeploy\",\"cors\":true},\"codepipeline\":{\"name\":\"CodePipeline\",\"cors\":true},\"cognitoidentity\":{\"prefix\":\"cognito-identity\",\"name\":\"CognitoIdentity\",\"cors\":true},\"cognitoidentityserviceprovider\":{\"prefix\":\"cognito-idp\",\"name\":\"CognitoIdentityServiceProvider\",\"cors\":true},\"cognitosync\":{\"prefix\":\"cognito-sync\",\"name\":\"CognitoSync\",\"cors\":true},\"configservice\":{\"prefix\":\"config\",\"name\":\"ConfigService\",\"cors\":true},\"cur\":{\"name\":\"CUR\",\"cors\":true},\"datapipeline\":{\"name\":\"DataPipeline\"},\"devicefarm\":{\"name\":\"DeviceFarm\",\"cors\":true},\"directconnect\":{\"name\":\"DirectConnect\",\"cors\":true},\"directoryservice\":{\"prefix\":\"ds\",\"name\":\"DirectoryService\"},\"discovery\":{\"name\":\"Discovery\"},\"dms\":{\"name\":\"DMS\"},\"dynamodb\":{\"name\":\"DynamoDB\",\"cors\":true},\"dynamodbstreams\":{\"prefix\":\"streams.dynamodb\",\"name\":\"DynamoDBStreams\",\"cors\":true},\"ec2\":{\"name\":\"EC2\",\"versions\":[\"2013-06-15*\",\"2013-10-15*\",\"2014-02-01*\",\"2014-05-01*\",\"2014-06-15*\",\"2014-09-01*\",\"2014-10-01*\",\"2015-03-01*\",\"2015-04-15*\",\"2015-10-01*\",\"2016-04-01*\",\"2016-09-15*\"],\"cors\":true},\"ecr\":{\"name\":\"ECR\",\"cors\":true},\"ecs\":{\"name\":\"ECS\",\"cors\":true},\"efs\":{\"prefix\":\"elasticfilesystem\",\"name\":\"EFS\",\"cors\":true},\"elasticache\":{\"name\":\"ElastiCache\",\"versions\":[\"2012-11-15*\",\"2014-03-24*\",\"2014-07-15*\",\"2014-09-30*\"],\"cors\":true},\"elasticbeanstalk\":{\"name\":\"ElasticBeanstalk\",\"cors\":true},\"elb\":{\"prefix\":\"elasticloadbalancing\",\"name\":\"ELB\",\"cors\":true},\"elbv2\":{\"prefix\":\"elasticloadbalancingv2\",\"name\":\"ELBv2\",\"cors\":true},\"emr\":{\"prefix\":\"elasticmapreduce\",\"name\":\"EMR\",\"cors\":true},\"es\":{\"name\":\"ES\"},\"elastictranscoder\":{\"name\":\"ElasticTranscoder\",\"cors\":true},\"firehose\":{\"name\":\"Firehose\",\"cors\":true},\"gamelift\":{\"name\":\"GameLift\",\"cors\":true},\"glacier\":{\"name\":\"Glacier\"},\"health\":{\"name\":\"Health\"},\"iam\":{\"name\":\"IAM\",\"cors\":true},\"importexport\":{\"name\":\"ImportExport\"},\"inspector\":{\"name\":\"Inspector\",\"versions\":[\"2015-08-18*\"],\"cors\":true},\"iot\":{\"name\":\"Iot\",\"cors\":true},\"iotdata\":{\"prefix\":\"iot-data\",\"name\":\"IotData\",\"cors\":true},\"kinesis\":{\"name\":\"Kinesis\",\"cors\":true},\"kinesisanalytics\":{\"name\":\"KinesisAnalytics\"},\"kms\":{\"name\":\"KMS\",\"cors\":true},\"lambda\":{\"name\":\"Lambda\",\"cors\":true},\"lexruntime\":{\"prefix\":\"runtime.lex\",\"name\":\"LexRuntime\",\"cors\":true},\"lightsail\":{\"name\":\"Lightsail\"},\"machinelearning\":{\"name\":\"MachineLearning\",\"cors\":true},\"marketplacecommerceanalytics\":{\"name\":\"MarketplaceCommerceAnalytics\",\"cors\":true},\"marketplacemetering\":{\"prefix\":\"meteringmarketplace\",\"name\":\"MarketplaceMetering\"},\"mturk\":{\"prefix\":\"mturk-requester\",\"name\":\"MTurk\",\"cors\":true},\"mobileanalytics\":{\"name\":\"MobileAnalytics\",\"cors\":true},\"opsworks\":{\"name\":\"OpsWorks\",\"cors\":true},\"opsworkscm\":{\"name\":\"OpsWorksCM\"},\"organizations\":{\"name\":\"Organizations\"},\"pinpoint\":{\"name\":\"Pinpoint\"},\"polly\":{\"name\":\"Polly\",\"cors\":true},\"rds\":{\"name\":\"RDS\",\"versions\":[\"2014-09-01*\"],\"cors\":true},\"redshift\":{\"name\":\"Redshift\",\"cors\":true},\"rekognition\":{\"name\":\"Rekognition\",\"cors\":true},\"resourcegroupstaggingapi\":{\"name\":\"ResourceGroupsTaggingAPI\"},\"route53\":{\"name\":\"Route53\",\"cors\":true},\"route53domains\":{\"name\":\"Route53Domains\",\"cors\":true},\"s3\":{\"name\":\"S3\",\"dualstackAvailable\":true,\"cors\":true},\"s3control\":{\"name\":\"S3Control\",\"dualstackAvailable\":true,\"xmlNoDefaultLists\":true},\"servicecatalog\":{\"name\":\"ServiceCatalog\",\"cors\":true},\"ses\":{\"prefix\":\"email\",\"name\":\"SES\",\"cors\":true},\"shield\":{\"name\":\"Shield\"},\"simpledb\":{\"prefix\":\"sdb\",\"name\":\"SimpleDB\"},\"sms\":{\"name\":\"SMS\"},\"snowball\":{\"name\":\"Snowball\"},\"sns\":{\"name\":\"SNS\",\"cors\":true},\"sqs\":{\"name\":\"SQS\",\"cors\":true},\"ssm\":{\"name\":\"SSM\",\"cors\":true},\"storagegateway\":{\"name\":\"StorageGateway\",\"cors\":true},\"stepfunctions\":{\"prefix\":\"states\",\"name\":\"StepFunctions\"},\"sts\":{\"name\":\"STS\",\"cors\":true},\"support\":{\"name\":\"Support\"},\"swf\":{\"name\":\"SWF\"},\"xray\":{\"name\":\"XRay\",\"cors\":true},\"waf\":{\"name\":\"WAF\",\"cors\":true},\"wafregional\":{\"prefix\":\"waf-regional\",\"name\":\"WAFRegional\"},\"workdocs\":{\"name\":\"WorkDocs\",\"cors\":true},\"workspaces\":{\"name\":\"WorkSpaces\"},\"codestar\":{\"name\":\"CodeStar\"},\"lexmodelbuildingservice\":{\"prefix\":\"lex-models\",\"name\":\"LexModelBuildingService\",\"cors\":true},\"marketplaceentitlementservice\":{\"prefix\":\"entitlement.marketplace\",\"name\":\"MarketplaceEntitlementService\"},\"athena\":{\"name\":\"Athena\",\"cors\":true},\"greengrass\":{\"name\":\"Greengrass\"},\"dax\":{\"name\":\"DAX\"},\"migrationhub\":{\"prefix\":\"AWSMigrationHub\",\"name\":\"MigrationHub\"},\"cloudhsmv2\":{\"name\":\"CloudHSMV2\",\"cors\":true},\"glue\":{\"name\":\"Glue\"},\"mobile\":{\"name\":\"Mobile\"},\"pricing\":{\"name\":\"Pricing\",\"cors\":true},\"costexplorer\":{\"prefix\":\"ce\",\"name\":\"CostExplorer\",\"cors\":true},\"mediaconvert\":{\"name\":\"MediaConvert\"},\"medialive\":{\"name\":\"MediaLive\"},\"mediapackage\":{\"name\":\"MediaPackage\"},\"mediastore\":{\"name\":\"MediaStore\"},\"mediastoredata\":{\"prefix\":\"mediastore-data\",\"name\":\"MediaStoreData\",\"cors\":true},\"appsync\":{\"name\":\"AppSync\"},\"guardduty\":{\"name\":\"GuardDuty\"},\"mq\":{\"name\":\"MQ\"},\"comprehend\":{\"name\":\"Comprehend\",\"cors\":true},\"iotjobsdataplane\":{\"prefix\":\"iot-jobs-data\",\"name\":\"IoTJobsDataPlane\"},\"kinesisvideoarchivedmedia\":{\"prefix\":\"kinesis-video-archived-media\",\"name\":\"KinesisVideoArchivedMedia\",\"cors\":true},\"kinesisvideomedia\":{\"prefix\":\"kinesis-video-media\",\"name\":\"KinesisVideoMedia\",\"cors\":true},\"kinesisvideo\":{\"name\":\"KinesisVideo\",\"cors\":true},\"sagemakerruntime\":{\"prefix\":\"runtime.sagemaker\",\"name\":\"SageMakerRuntime\"},\"sagemaker\":{\"name\":\"SageMaker\"},\"translate\":{\"name\":\"Translate\",\"cors\":true},\"resourcegroups\":{\"prefix\":\"resource-groups\",\"name\":\"ResourceGroups\",\"cors\":true},\"alexaforbusiness\":{\"name\":\"AlexaForBusiness\"},\"cloud9\":{\"name\":\"Cloud9\"},\"serverlessapplicationrepository\":{\"prefix\":\"serverlessrepo\",\"name\":\"ServerlessApplicationRepository\"},\"servicediscovery\":{\"name\":\"ServiceDiscovery\"},\"workmail\":{\"name\":\"WorkMail\"},\"autoscalingplans\":{\"prefix\":\"autoscaling-plans\",\"name\":\"AutoScalingPlans\"},\"transcribeservice\":{\"prefix\":\"transcribe\",\"name\":\"TranscribeService\"},\"connect\":{\"name\":\"Connect\",\"cors\":true},\"acmpca\":{\"prefix\":\"acm-pca\",\"name\":\"ACMPCA\"},\"fms\":{\"name\":\"FMS\"},\"secretsmanager\":{\"name\":\"SecretsManager\",\"cors\":true},\"iotanalytics\":{\"name\":\"IoTAnalytics\",\"cors\":true},\"iot1clickdevicesservice\":{\"prefix\":\"iot1click-devices\",\"name\":\"IoT1ClickDevicesService\"},\"iot1clickprojects\":{\"prefix\":\"iot1click-projects\",\"name\":\"IoT1ClickProjects\"},\"pi\":{\"name\":\"PI\"},\"neptune\":{\"name\":\"Neptune\"},\"mediatailor\":{\"name\":\"MediaTailor\"},\"eks\":{\"name\":\"EKS\"},\"macie\":{\"name\":\"Macie\"},\"dlm\":{\"name\":\"DLM\"},\"signer\":{\"name\":\"Signer\"},\"chime\":{\"name\":\"Chime\"},\"pinpointemail\":{\"prefix\":\"pinpoint-email\",\"name\":\"PinpointEmail\"},\"ram\":{\"name\":\"RAM\"},\"route53resolver\":{\"name\":\"Route53Resolver\"},\"pinpointsmsvoice\":{\"prefix\":\"sms-voice\",\"name\":\"PinpointSMSVoice\"},\"quicksight\":{\"name\":\"QuickSight\"},\"rdsdataservice\":{\"prefix\":\"rds-data\",\"name\":\"RDSDataService\"},\"amplify\":{\"name\":\"Amplify\"},\"datasync\":{\"name\":\"DataSync\"},\"robomaker\":{\"name\":\"RoboMaker\"},\"transfer\":{\"name\":\"Transfer\"},\"globalaccelerator\":{\"name\":\"GlobalAccelerator\"},\"comprehendmedical\":{\"name\":\"ComprehendMedical\",\"cors\":true},\"kinesisanalyticsv2\":{\"name\":\"KinesisAnalyticsV2\"},\"mediaconnect\":{\"name\":\"MediaConnect\"},\"fsx\":{\"name\":\"FSx\"},\"securityhub\":{\"name\":\"SecurityHub\"},\"appmesh\":{\"name\":\"AppMesh\",\"versions\":[\"2018-10-01*\"]},\"licensemanager\":{\"prefix\":\"license-manager\",\"name\":\"LicenseManager\"},\"kafka\":{\"name\":\"Kafka\"},\"apigatewaymanagementapi\":{\"name\":\"ApiGatewayManagementApi\"},\"apigatewayv2\":{\"name\":\"ApiGatewayV2\"},\"docdb\":{\"name\":\"DocDB\"},\"backup\":{\"name\":\"Backup\"},\"worklink\":{\"name\":\"WorkLink\"},\"textract\":{\"name\":\"Textract\"},\"managedblockchain\":{\"name\":\"ManagedBlockchain\"},\"mediapackagevod\":{\"prefix\":\"mediapackage-vod\",\"name\":\"MediaPackageVod\"},\"groundstation\":{\"name\":\"GroundStation\"},\"iotthingsgraph\":{\"name\":\"IoTThingsGraph\"},\"iotevents\":{\"name\":\"IoTEvents\"},\"ioteventsdata\":{\"prefix\":\"iotevents-data\",\"name\":\"IoTEventsData\"},\"personalize\":{\"name\":\"Personalize\",\"cors\":true},\"personalizeevents\":{\"prefix\":\"personalize-events\",\"name\":\"PersonalizeEvents\",\"cors\":true},\"personalizeruntime\":{\"prefix\":\"personalize-runtime\",\"name\":\"PersonalizeRuntime\",\"cors\":true},\"applicationinsights\":{\"prefix\":\"application-insights\",\"name\":\"ApplicationInsights\"},\"servicequotas\":{\"prefix\":\"service-quotas\",\"name\":\"ServiceQuotas\"},\"ec2instanceconnect\":{\"prefix\":\"ec2-instance-connect\",\"name\":\"EC2InstanceConnect\"},\"eventbridge\":{\"name\":\"EventBridge\"},\"lakeformation\":{\"name\":\"LakeFormation\"},\"forecastservice\":{\"prefix\":\"forecast\",\"name\":\"ForecastService\",\"cors\":true},\"forecastqueryservice\":{\"prefix\":\"forecastquery\",\"name\":\"ForecastQueryService\",\"cors\":true},\"qldb\":{\"name\":\"QLDB\"},\"qldbsession\":{\"prefix\":\"qldb-session\",\"name\":\"QLDBSession\"},\"workmailmessageflow\":{\"name\":\"WorkMailMessageFlow\"},\"codestarnotifications\":{\"prefix\":\"codestar-notifications\",\"name\":\"CodeStarNotifications\"},\"savingsplans\":{\"name\":\"SavingsPlans\"},\"sso\":{\"name\":\"SSO\"},\"ssooidc\":{\"prefix\":\"sso-oidc\",\"name\":\"SSOOIDC\"},\"marketplacecatalog\":{\"prefix\":\"marketplace-catalog\",\"name\":\"MarketplaceCatalog\"},\"dataexchange\":{\"name\":\"DataExchange\"},\"sesv2\":{\"name\":\"SESV2\"},\"migrationhubconfig\":{\"prefix\":\"migrationhub-config\",\"name\":\"MigrationHubConfig\"},\"connectparticipant\":{\"name\":\"ConnectParticipant\"},\"appconfig\":{\"name\":\"AppConfig\"},\"iotsecuretunneling\":{\"name\":\"IoTSecureTunneling\"},\"wafv2\":{\"name\":\"WAFV2\"},\"elasticinference\":{\"prefix\":\"elastic-inference\",\"name\":\"ElasticInference\"},\"imagebuilder\":{\"name\":\"Imagebuilder\"},\"schemas\":{\"name\":\"Schemas\"},\"accessanalyzer\":{\"name\":\"AccessAnalyzer\"},\"codegurureviewer\":{\"prefix\":\"codeguru-reviewer\",\"name\":\"CodeGuruReviewer\"},\"codeguruprofiler\":{\"name\":\"CodeGuruProfiler\"},\"computeoptimizer\":{\"prefix\":\"compute-optimizer\",\"name\":\"ComputeOptimizer\"},\"frauddetector\":{\"name\":\"FraudDetector\"},\"kendra\":{\"name\":\"Kendra\"},\"networkmanager\":{\"name\":\"NetworkManager\"},\"outposts\":{\"name\":\"Outposts\"},\"augmentedairuntime\":{\"prefix\":\"sagemaker-a2i-runtime\",\"name\":\"AugmentedAIRuntime\"},\"ebs\":{\"name\":\"EBS\"},\"kinesisvideosignalingchannels\":{\"prefix\":\"kinesis-video-signaling\",\"name\":\"KinesisVideoSignalingChannels\",\"cors\":true},\"detective\":{\"name\":\"Detective\"},\"codestarconnections\":{\"prefix\":\"codestar-connections\",\"name\":\"CodeStarconnections\"},\"synthetics\":{\"name\":\"Synthetics\"},\"iotsitewise\":{\"name\":\"IoTSiteWise\"},\"macie2\":{\"name\":\"Macie2\"},\"codeartifact\":{\"name\":\"CodeArtifact\"},\"honeycode\":{\"name\":\"Honeycode\"},\"ivs\":{\"name\":\"IVS\"},\"braket\":{\"name\":\"Braket\"},\"identitystore\":{\"name\":\"IdentityStore\"},\"appflow\":{\"name\":\"Appflow\"},\"redshiftdata\":{\"prefix\":\"redshift-data\",\"name\":\"RedshiftData\"},\"ssoadmin\":{\"prefix\":\"sso-admin\",\"name\":\"SSOAdmin\"},\"timestreamquery\":{\"prefix\":\"timestream-query\",\"name\":\"TimestreamQuery\"},\"timestreamwrite\":{\"prefix\":\"timestream-write\",\"name\":\"TimestreamWrite\"},\"s3outposts\":{\"name\":\"S3Outposts\"},\"databrew\":{\"name\":\"DataBrew\"},\"servicecatalogappregistry\":{\"prefix\":\"servicecatalog-appregistry\",\"name\":\"ServiceCatalogAppRegistry\"},\"networkfirewall\":{\"prefix\":\"network-firewall\",\"name\":\"NetworkFirewall\"},\"mwaa\":{\"name\":\"MWAA\"},\"amplifybackend\":{\"name\":\"AmplifyBackend\"},\"appintegrations\":{\"name\":\"AppIntegrations\"},\"connectcontactlens\":{\"prefix\":\"connect-contact-lens\",\"name\":\"ConnectContactLens\"},\"devopsguru\":{\"prefix\":\"devops-guru\",\"name\":\"DevOpsGuru\"},\"ecrpublic\":{\"prefix\":\"ecr-public\",\"name\":\"ECRPUBLIC\"},\"lookoutvision\":{\"name\":\"LookoutVision\"},\"sagemakerfeaturestoreruntime\":{\"prefix\":\"sagemaker-featurestore-runtime\",\"name\":\"SageMakerFeatureStoreRuntime\"},\"customerprofiles\":{\"prefix\":\"customer-profiles\",\"name\":\"CustomerProfiles\"},\"auditmanager\":{\"name\":\"AuditManager\"},\"emrcontainers\":{\"prefix\":\"emr-containers\",\"name\":\"EMRcontainers\"},\"healthlake\":{\"name\":\"HealthLake\"},\"sagemakeredge\":{\"prefix\":\"sagemaker-edge\",\"name\":\"SagemakerEdge\"},\"amp\":{\"name\":\"Amp\"},\"greengrassv2\":{\"name\":\"GreengrassV2\"},\"iotdeviceadvisor\":{\"name\":\"IotDeviceAdvisor\"},\"iotfleethub\":{\"name\":\"IoTFleetHub\"},\"iotwireless\":{\"name\":\"IoTWireless\"},\"location\":{\"name\":\"Location\",\"cors\":true},\"wellarchitected\":{\"name\":\"WellArchitected\"},\"lexmodelsv2\":{\"prefix\":\"models.lex.v2\",\"name\":\"LexModelsV2\"},\"lexruntimev2\":{\"prefix\":\"runtime.lex.v2\",\"name\":\"LexRuntimeV2\",\"cors\":true},\"fis\":{\"name\":\"Fis\"},\"lookoutmetrics\":{\"name\":\"LookoutMetrics\"},\"mgn\":{\"name\":\"Mgn\"},\"lookoutequipment\":{\"name\":\"LookoutEquipment\"},\"nimble\":{\"name\":\"Nimble\"},\"finspace\":{\"name\":\"Finspace\"},\"finspacedata\":{\"prefix\":\"finspace-data\",\"name\":\"Finspacedata\"},\"ssmcontacts\":{\"prefix\":\"ssm-contacts\",\"name\":\"SSMContacts\"},\"ssmincidents\":{\"prefix\":\"ssm-incidents\",\"name\":\"SSMIncidents\"},\"applicationcostprofiler\":{\"name\":\"ApplicationCostProfiler\"},\"apprunner\":{\"name\":\"AppRunner\"},\"proton\":{\"name\":\"Proton\"}}");
 
 /***/ }),
 
@@ -49904,7 +50095,7 @@ module.exports = JSON.parse("{\"acm\":{\"name\":\"ACM\",\"cors\":true},\"apigate
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"version\":\"2.0\",\"metadata\":{\"apiVersion\":\"2011-06-15\",\"endpointPrefix\":\"sts\",\"globalEndpoint\":\"sts.amazonaws.com\",\"protocol\":\"query\",\"serviceAbbreviation\":\"AWS STS\",\"serviceFullName\":\"AWS Security Token Service\",\"serviceId\":\"STS\",\"signatureVersion\":\"v4\",\"uid\":\"sts-2011-06-15\",\"xmlNamespace\":\"https://sts.amazonaws.com/doc/2011-06-15/\"},\"operations\":{\"AssumeRole\":{\"input\":{\"type\":\"structure\",\"required\":[\"RoleArn\",\"RoleSessionName\"],\"members\":{\"RoleArn\":{},\"RoleSessionName\":{},\"PolicyArns\":{\"shape\":\"S4\"},\"Policy\":{},\"DurationSeconds\":{\"type\":\"integer\"},\"Tags\":{\"shape\":\"S8\"},\"TransitiveTagKeys\":{\"type\":\"list\",\"member\":{}},\"ExternalId\":{},\"SerialNumber\":{},\"TokenCode\":{}}},\"output\":{\"resultWrapper\":\"AssumeRoleResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Sh\"},\"AssumedRoleUser\":{\"shape\":\"Sm\"},\"PackedPolicySize\":{\"type\":\"integer\"}}}},\"AssumeRoleWithSAML\":{\"input\":{\"type\":\"structure\",\"required\":[\"RoleArn\",\"PrincipalArn\",\"SAMLAssertion\"],\"members\":{\"RoleArn\":{},\"PrincipalArn\":{},\"SAMLAssertion\":{},\"PolicyArns\":{\"shape\":\"S4\"},\"Policy\":{},\"DurationSeconds\":{\"type\":\"integer\"}}},\"output\":{\"resultWrapper\":\"AssumeRoleWithSAMLResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Sh\"},\"AssumedRoleUser\":{\"shape\":\"Sm\"},\"PackedPolicySize\":{\"type\":\"integer\"},\"Subject\":{},\"SubjectType\":{},\"Issuer\":{},\"Audience\":{},\"NameQualifier\":{}}}},\"AssumeRoleWithWebIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"RoleArn\",\"RoleSessionName\",\"WebIdentityToken\"],\"members\":{\"RoleArn\":{},\"RoleSessionName\":{},\"WebIdentityToken\":{},\"ProviderId\":{},\"PolicyArns\":{\"shape\":\"S4\"},\"Policy\":{},\"DurationSeconds\":{\"type\":\"integer\"}}},\"output\":{\"resultWrapper\":\"AssumeRoleWithWebIdentityResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Sh\"},\"SubjectFromWebIdentityToken\":{},\"AssumedRoleUser\":{\"shape\":\"Sm\"},\"PackedPolicySize\":{\"type\":\"integer\"},\"Provider\":{},\"Audience\":{}}}},\"DecodeAuthorizationMessage\":{\"input\":{\"type\":\"structure\",\"required\":[\"EncodedMessage\"],\"members\":{\"EncodedMessage\":{}}},\"output\":{\"resultWrapper\":\"DecodeAuthorizationMessageResult\",\"type\":\"structure\",\"members\":{\"DecodedMessage\":{}}}},\"GetAccessKeyInfo\":{\"input\":{\"type\":\"structure\",\"required\":[\"AccessKeyId\"],\"members\":{\"AccessKeyId\":{}}},\"output\":{\"resultWrapper\":\"GetAccessKeyInfoResult\",\"type\":\"structure\",\"members\":{\"Account\":{}}}},\"GetCallerIdentity\":{\"input\":{\"type\":\"structure\",\"members\":{}},\"output\":{\"resultWrapper\":\"GetCallerIdentityResult\",\"type\":\"structure\",\"members\":{\"UserId\":{},\"Account\":{},\"Arn\":{}}}},\"GetFederationToken\":{\"input\":{\"type\":\"structure\",\"required\":[\"Name\"],\"members\":{\"Name\":{},\"Policy\":{},\"PolicyArns\":{\"shape\":\"S4\"},\"DurationSeconds\":{\"type\":\"integer\"},\"Tags\":{\"shape\":\"S8\"}}},\"output\":{\"resultWrapper\":\"GetFederationTokenResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Sh\"},\"FederatedUser\":{\"type\":\"structure\",\"required\":[\"FederatedUserId\",\"Arn\"],\"members\":{\"FederatedUserId\":{},\"Arn\":{}}},\"PackedPolicySize\":{\"type\":\"integer\"}}}},\"GetSessionToken\":{\"input\":{\"type\":\"structure\",\"members\":{\"DurationSeconds\":{\"type\":\"integer\"},\"SerialNumber\":{},\"TokenCode\":{}}},\"output\":{\"resultWrapper\":\"GetSessionTokenResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Sh\"}}}}},\"shapes\":{\"S4\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"arn\":{}}}},\"S8\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"required\":[\"Key\",\"Value\"],\"members\":{\"Key\":{},\"Value\":{}}}},\"Sh\":{\"type\":\"structure\",\"required\":[\"AccessKeyId\",\"SecretAccessKey\",\"SessionToken\",\"Expiration\"],\"members\":{\"AccessKeyId\":{},\"SecretAccessKey\":{},\"SessionToken\":{},\"Expiration\":{\"type\":\"timestamp\"}}},\"Sm\":{\"type\":\"structure\",\"required\":[\"AssumedRoleId\",\"Arn\"],\"members\":{\"AssumedRoleId\":{},\"Arn\":{}}}}}");
+module.exports = JSON.parse("{\"version\":\"2.0\",\"metadata\":{\"apiVersion\":\"2011-06-15\",\"endpointPrefix\":\"sts\",\"globalEndpoint\":\"sts.amazonaws.com\",\"protocol\":\"query\",\"serviceAbbreviation\":\"AWS STS\",\"serviceFullName\":\"AWS Security Token Service\",\"serviceId\":\"STS\",\"signatureVersion\":\"v4\",\"uid\":\"sts-2011-06-15\",\"xmlNamespace\":\"https://sts.amazonaws.com/doc/2011-06-15/\"},\"operations\":{\"AssumeRole\":{\"input\":{\"type\":\"structure\",\"required\":[\"RoleArn\",\"RoleSessionName\"],\"members\":{\"RoleArn\":{},\"RoleSessionName\":{},\"PolicyArns\":{\"shape\":\"S4\"},\"Policy\":{},\"DurationSeconds\":{\"type\":\"integer\"},\"Tags\":{\"shape\":\"S8\"},\"TransitiveTagKeys\":{\"type\":\"list\",\"member\":{}},\"ExternalId\":{},\"SerialNumber\":{},\"TokenCode\":{},\"SourceIdentity\":{}}},\"output\":{\"resultWrapper\":\"AssumeRoleResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Si\"},\"AssumedRoleUser\":{\"shape\":\"Sn\"},\"PackedPolicySize\":{\"type\":\"integer\"},\"SourceIdentity\":{}}}},\"AssumeRoleWithSAML\":{\"input\":{\"type\":\"structure\",\"required\":[\"RoleArn\",\"PrincipalArn\",\"SAMLAssertion\"],\"members\":{\"RoleArn\":{},\"PrincipalArn\":{},\"SAMLAssertion\":{},\"PolicyArns\":{\"shape\":\"S4\"},\"Policy\":{},\"DurationSeconds\":{\"type\":\"integer\"}}},\"output\":{\"resultWrapper\":\"AssumeRoleWithSAMLResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Si\"},\"AssumedRoleUser\":{\"shape\":\"Sn\"},\"PackedPolicySize\":{\"type\":\"integer\"},\"Subject\":{},\"SubjectType\":{},\"Issuer\":{},\"Audience\":{},\"NameQualifier\":{},\"SourceIdentity\":{}}}},\"AssumeRoleWithWebIdentity\":{\"input\":{\"type\":\"structure\",\"required\":[\"RoleArn\",\"RoleSessionName\",\"WebIdentityToken\"],\"members\":{\"RoleArn\":{},\"RoleSessionName\":{},\"WebIdentityToken\":{},\"ProviderId\":{},\"PolicyArns\":{\"shape\":\"S4\"},\"Policy\":{},\"DurationSeconds\":{\"type\":\"integer\"}}},\"output\":{\"resultWrapper\":\"AssumeRoleWithWebIdentityResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Si\"},\"SubjectFromWebIdentityToken\":{},\"AssumedRoleUser\":{\"shape\":\"Sn\"},\"PackedPolicySize\":{\"type\":\"integer\"},\"Provider\":{},\"Audience\":{},\"SourceIdentity\":{}}}},\"DecodeAuthorizationMessage\":{\"input\":{\"type\":\"structure\",\"required\":[\"EncodedMessage\"],\"members\":{\"EncodedMessage\":{}}},\"output\":{\"resultWrapper\":\"DecodeAuthorizationMessageResult\",\"type\":\"structure\",\"members\":{\"DecodedMessage\":{}}}},\"GetAccessKeyInfo\":{\"input\":{\"type\":\"structure\",\"required\":[\"AccessKeyId\"],\"members\":{\"AccessKeyId\":{}}},\"output\":{\"resultWrapper\":\"GetAccessKeyInfoResult\",\"type\":\"structure\",\"members\":{\"Account\":{}}}},\"GetCallerIdentity\":{\"input\":{\"type\":\"structure\",\"members\":{}},\"output\":{\"resultWrapper\":\"GetCallerIdentityResult\",\"type\":\"structure\",\"members\":{\"UserId\":{},\"Account\":{},\"Arn\":{}}}},\"GetFederationToken\":{\"input\":{\"type\":\"structure\",\"required\":[\"Name\"],\"members\":{\"Name\":{},\"Policy\":{},\"PolicyArns\":{\"shape\":\"S4\"},\"DurationSeconds\":{\"type\":\"integer\"},\"Tags\":{\"shape\":\"S8\"}}},\"output\":{\"resultWrapper\":\"GetFederationTokenResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Si\"},\"FederatedUser\":{\"type\":\"structure\",\"required\":[\"FederatedUserId\",\"Arn\"],\"members\":{\"FederatedUserId\":{},\"Arn\":{}}},\"PackedPolicySize\":{\"type\":\"integer\"}}}},\"GetSessionToken\":{\"input\":{\"type\":\"structure\",\"members\":{\"DurationSeconds\":{\"type\":\"integer\"},\"SerialNumber\":{},\"TokenCode\":{}}},\"output\":{\"resultWrapper\":\"GetSessionTokenResult\",\"type\":\"structure\",\"members\":{\"Credentials\":{\"shape\":\"Si\"}}}}},\"shapes\":{\"S4\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"members\":{\"arn\":{}}}},\"S8\":{\"type\":\"list\",\"member\":{\"type\":\"structure\",\"required\":[\"Key\",\"Value\"],\"members\":{\"Key\":{},\"Value\":{}}}},\"Si\":{\"type\":\"structure\",\"required\":[\"AccessKeyId\",\"SecretAccessKey\",\"SessionToken\",\"Expiration\"],\"members\":{\"AccessKeyId\":{},\"SecretAccessKey\":{},\"SessionToken\":{},\"Expiration\":{\"type\":\"timestamp\"}}},\"Sn\":{\"type\":\"structure\",\"required\":[\"AssumedRoleId\",\"Arn\"],\"members\":{\"AssumedRoleId\":{},\"Arn\":{}}}}}");
 
 /***/ }),
 
