@@ -109,7 +109,6 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
 
         try {
             var {deploymentId: deploymentId} = await codeDeploy.createDeployment({
-                ...deploymentConfig,
                 ...{
                     applicationName: applicationName,
                     deploymentGroupName: deploymentGroupName,
@@ -121,7 +120,8 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                             repository: fullRepositoryName
                         }
                     }
-                }
+                },
+                ...deploymentConfig
             }).promise();
             console.log(`🚚️ Created deployment ${deploymentId} – https://console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=${codeDeploy.config.region}`);
             core.setOutput('deploymentId', deploymentId);
