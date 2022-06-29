@@ -21,7 +21,7 @@ function fetchBranchConfig(branchName, core) {
     const yaml = __webpack_require__(1917);
 
     try {
-        let fileContents = fs.readFileSync('./appspec.yml', 'utf8');
+        var fileContents = fs.readFileSync('./appspec.yml', 'utf8');
     } catch (e) {
         if (e.code == 'ENOENT') {
             core.setFailed('🙄 appspec.yml file not found. Hint: Did you run actions/checkout?');
