@@ -1,10 +1,19 @@
 'use strict';
 
-function fetchBranchConfig(branchName) {
+function fetchBranchConfig(branchName, core) {
     const fs = require('fs');
     const yaml = require('js-yaml');
 
-    let fileContents = fs.readFileSync('./appspec.yml', 'utf8');
+    try {
+        let fileContents = fs.readFileSync('./appspec.yml', 'utf8');
+    } catch (e) {
+        if (e.code == 'ENOENT') {
+            core.setFailed('🙄 appspec.yml file not found. Hint: Did you run actions/checkout?');
+            process.exit();
+        } else {
+            throw e;
+        }
+    }
     let data = yaml.safeLoad(fileContents);
 
     for (var prop in data.branch_config) {
@@ -24,7 +33,7 @@ function fetchBranchConfig(branchName) {
 }
 
 exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, commitId, runNumber, skipSequenceCheck, core) {
-    const branchConfig = fetchBranchConfig(branchName);
+    const branchConfig = fetchBranchConfig(branchName, core);
     const safeBranchName = branchName.replace(/[^a-z0-9-/]+/gi, '-').replace(/\/+/, '--');
     const deploymentGroupName = branchConfig.deploymentGroupName ? branchConfig.deploymentGroupName.replace('$BRANCH', safeBranchName) : safeBranchName;
     const deploymentGroupConfig = branchConfig.deploymentGroupConfig;
