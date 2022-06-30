@@ -1,6 +1,6 @@
 'use strict';
 
-function fetchBranchConfig(branchName, core) {
+function fetchBranchConfig(configLookupName, core) {
     const fs = require('fs');
     const yaml = require('js-yaml');
 
@@ -18,22 +18,22 @@ function fetchBranchConfig(branchName, core) {
 
     for (var prop in data.branch_config) {
         var regex = new RegExp('^' + prop + '$', 'i');
-        if (branchName.match(regex)) {
+        if (configLookupName.match(regex)) {
             if (data.branch_config[prop] == null) {
-                console.log(`🤷🏻‍♂️ Found an empty appspec.yml -> branch_config for '${branchName}' – skipping deployment`);
+                console.log(`🤷🏻‍♂️ Found an empty appspec.yml -> branch_config for '${configLookupName}' – skipping deployment`);
                 process.exit();
             }
-            console.log(`💡 Using appspec.yml -> branch_config '${prop}' for branch '${branchName}'`);
+            console.log(`💡 Using appspec.yml -> branch_config '${prop}' for '${configLookupName}'`);
             return data.branch_config[prop];
         }
     }
 
-    console.log(`❓ Found no matching appspec.yml -> branch_config for '${branchName}' – skipping deployment`);
+    console.log(`❓ Found no matching appspec.yml -> branch_config for '${configLookupName}' – skipping deployment`);
     process.exit();
 }
 
-exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, commitId, runNumber, skipSequenceCheck, core) {
-    const branchConfig = fetchBranchConfig(branchName, core);
+exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, configLookupName, commitId, runNumber, skipSequenceCheck, core) {
+    const branchConfig = fetchBranchConfig(configLookupName, core);
     const safeBranchName = branchName.replace(/[^a-z0-9-/]+/gi, '-').replace(/\/+/, '--');
     const deploymentGroupName = branchConfig.deploymentGroupName ? branchConfig.deploymentGroupName.replace('$BRANCH', safeBranchName) : safeBranchName;
     const deploymentGroupConfig = branchConfig.deploymentGroupConfig;

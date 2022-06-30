@@ -16,7 +16,7 @@ module.exports = JSON.parse("{\"name\":\"@octokit/rest\",\"version\":\"16.43.2\"
 "use strict";
 
 
-function fetchBranchConfig(branchName, core) {
+function fetchBranchConfig(configLookupName, core) {
     const fs = __webpack_require__(5747);
     const yaml = __webpack_require__(1917);
 
@@ -34,22 +34,22 @@ function fetchBranchConfig(branchName, core) {
 
     for (var prop in data.branch_config) {
         var regex = new RegExp('^' + prop + '$', 'i');
-        if (branchName.match(regex)) {
+        if (configLookupName.match(regex)) {
             if (data.branch_config[prop] == null) {
-                console.log(`🤷🏻‍♂️ Found an empty appspec.yml -> branch_config for '${branchName}' – skipping deployment`);
+                console.log(`🤷🏻‍♂️ Found an empty appspec.yml -> branch_config for '${configLookupName}' – skipping deployment`);
                 process.exit();
             }
-            console.log(`💡 Using appspec.yml -> branch_config '${prop}' for branch '${branchName}'`);
+            console.log(`💡 Using appspec.yml -> branch_config '${prop}' for '${configLookupName}'`);
             return data.branch_config[prop];
         }
     }
 
-    console.log(`❓ Found no matching appspec.yml -> branch_config for '${branchName}' – skipping deployment`);
+    console.log(`❓ Found no matching appspec.yml -> branch_config for '${configLookupName}' – skipping deployment`);
     process.exit();
 }
 
-exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, commitId, runNumber, skipSequenceCheck, core) {
-    const branchConfig = fetchBranchConfig(branchName, core);
+exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, configLookupName, commitId, runNumber, skipSequenceCheck, core) {
+    const branchConfig = fetchBranchConfig(configLookupName, core);
     const safeBranchName = branchName.replace(/[^a-z0-9-/]+/gi, '-').replace(/\/+/, '--');
     const deploymentGroupName = branchConfig.deploymentGroupName ? branchConfig.deploymentGroupName.replace('$BRANCH', safeBranchName) : safeBranchName;
     const deploymentGroupConfig = branchConfig.deploymentGroupConfig;
@@ -202,6 +202,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
     const isPullRequest = payload.pull_request !== undefined;
     const commitId = isPullRequest ? payload.pull_request.head.sha : (payload.head_commit ? payload.head_commit.id : github.context.sha); // like "ec26c3e57ca3a959ca5aad62de7213c562f8c821"
     const branchName = isPullRequest ? payload.pull_request.head.ref : payload.ref.replace(/^refs\/heads\//, ''); // like "my/branch_name"
+    const configLookupName = core.getInput('config-name') || branchName;
 
     const skipSequenceCheck = core.getBooleanInput('skip-sequence-check');
 
@@ -210,7 +211,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
     const runNumber = process.env['github_run_number'] || process.env['GITHUB_RUN_NUMBER'];
 
     try {
-        action.createDeployment(applicationName, fullRepositoryName, branchName, commitId, runNumber, skipSequenceCheck, core);
+        action.createDeployment(applicationName, fullRepositoryName, branchName, configLookupName, commitId, runNumber, skipSequenceCheck, core);
     } catch (e) {}
 })();
 

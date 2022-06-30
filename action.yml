@@ -6,6 +6,9 @@ inputs:
     skip-sequence-check:
         description: 'When set, skip the check making sure no earlier workflow results are deployed'
         default: false
+    config-name:
+        description: 'Override name to look up branch_config; default is to use the current branch name.'
+        default: ''
 outputs:
     deploymentId:
         description: AWS CodeDeployment Deployment-ID of the deployment created

@@ -48,7 +48,7 @@ jobs:
                 with:
                     token: ${{ secrets.GITHUB_TOKEN }}
                     body: |
-                        @${{ github.actor }} this was deployed as [${{ steps.deploy.outputs.deploymentId }}](https://console.aws.amazon.com/codesuite/codedeploy/deployments/${{ steps.deploy.outputs.deploymentId }}?region=eu-central-1) to group `${{ steps.deploy.outputs.deploymentGroupName }}`.
+                        @${{ github.actor }} this was deployed as [${{ steps.deploy.outputs.deploymentId }}](https://console.aws.amazon.com/codesuite/codedeploy/deployments/${{ steps.deploy.outputs.deploymentId }}?region=eu-central-1) to group `${{ steps.deploy.outputs.deploymentGroupName }}`.
 ```
 
 First, this configures AWS Credentials in the GitHub Action runner. The [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action is used for that, and credentials are kept in [GitHub Actions Secrets](https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets).
@@ -165,6 +165,7 @@ This workaround should catch a good share of possible out-of-order deployments. 
 
 * `application`: The name of the CodeDeploy Application to work with. Defaults to the "short" repo name.
 * `skip-sequence-check`: When set to `true`, do not attempt to make sure deployments happen in order. Use this when the workflow count has been reset or changed to a lower value; possible cause is renaming the workflow file.
+* `config-name`: Name used to look up the deployment config in the `branch_config` section of the `appspec.yml` file. Defaults to the current branch name. By using this override, you can force a particular config to be used regardless of the branch name. Or, you can run the action several times within the same job to create multiple (different) deployments from the same branch.
 
 ### Outputs
 
