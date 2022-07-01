@@ -21,6 +21,9 @@
     const runNumber = process.env['github_run_number'] || process.env['GITHUB_RUN_NUMBER'];
 
     try {
-        action.createDeployment(applicationName, fullRepositoryName, branchName, configLookupName, commitId, runNumber, skipSequenceCheck, core);
-    } catch (e) {}
+        await action.createDeployment(applicationName, fullRepositoryName, branchName, configLookupName, commitId, runNumber, skipSequenceCheck, core);
+    } catch (e) {
+        console.log(`👉🏻 ${e.message}`);
+        process.exit(1);
+    }
 })();

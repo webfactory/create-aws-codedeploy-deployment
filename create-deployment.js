@@ -161,6 +161,5 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
         console.log('🥳 Deployment successful');
     } catch (e) {
         core.setFailed(`😱 The deployment ${deploymentId} seems to have failed.`);
-        throw e;
     }
 }
