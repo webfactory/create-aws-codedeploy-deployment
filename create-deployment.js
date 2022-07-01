@@ -138,7 +138,16 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
             break;
         } catch (e) {
             if (e.code == 'DeploymentLimitExceededException') {
-                var [, otherDeployment] = e.message.toString().match(/is already deploying deployment \'(d-\w+)\'/);
+                let message = e.message.toString();
+                let found = message.match(/(?:is already deploying|already has an active Deployment) \'(d-\w+)\'/);
+
+                if (!found) {
+                    console.log(`🐞 Unexpected exception message: ${message}`);
+                    core.setFailed('Aborting');
+                    throw e;
+                }
+
+                let [, otherDeployment] = found;
                 console.log(`😶 Waiting for another pending deployment ${otherDeployment}`);
                 try {
                     await codeDeploy.waitFor('deploymentSuccessful', {deploymentId: otherDeployment}).promise();
