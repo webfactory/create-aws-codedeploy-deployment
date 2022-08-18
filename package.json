@@ -5,7 +5,7 @@
     "build": "ncc build index.js -o dist"
   },
   "dependencies": {
-    "@actions/core": "^1.2.4",
+    "@actions/core": "^1.9.1",
     "@actions/github": "^2.2.0",
     "aws-sdk": "^2.677.0",
     "js-yaml": "^3.14.0",
