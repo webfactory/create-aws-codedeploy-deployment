@@ -17,7 +17,7 @@ outputs:
     deploymentGroupCreated:
         description: True, if a new deployment group was created; false if an already existing group was used.
 runs:
-    using: 'node12'
+    using: 'node16'
     main: 'dist/index.js'
 
 branding:
