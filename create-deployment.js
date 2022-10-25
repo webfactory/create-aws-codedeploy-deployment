@@ -32,10 +32,10 @@ function fetchBranchConfig(configLookupName, core) {
     process.exit();
 }
 
-exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, configLookupName, commitId, runNumber, skipSequenceCheck, core) {
+exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, pullRequestNumber, configLookupName, commitId, runNumber, skipSequenceCheck, core) {
     const branchConfig = fetchBranchConfig(configLookupName, core);
     const safeBranchName = branchName.replace(/[^a-z0-9-/]+/gi, '-').replace(/\/+/, '--');
-    const deploymentGroupName = branchConfig.deploymentGroupName ? branchConfig.deploymentGroupName.replace('$BRANCH', safeBranchName) : safeBranchName;
+    const deploymentGroupName = (branchConfig.deploymentGroupName ?? safeBranchName).replace('$BRANCH', safeBranchName).replace('$PR_NUMBER', pullRequestNumber);
     const deploymentGroupConfig = branchConfig.deploymentGroupConfig;
     const deploymentConfig = branchConfig.deploymentConfig;
 
