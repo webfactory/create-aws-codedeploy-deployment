@@ -98,6 +98,8 @@ The first entry makes the action skip the deployment (do nothing at all) when th
 
 Commits on the `master` branch are to be deployed in a Deployment Group called `production`. All other commits will create or update a Deployment Group named `$BRANCH.staging.acme.tld`, where `$BRANCH` will be replaced with a DNS-safe name derived from the current branch. Basically, a branch called `feat/123/new_gimmick` will use `feat-123-new-gimmick` for `$BRANCH`. Since the Deployment Group Name is available in the `$DEPLOYMENT_GROUP_NAME` environment variable inside your CodeDeploy Lifecycle Scripts, you can use that to create "staging" environments with a single, generic configuration statement.
 
+Similar to `$BRANCH`, for workflows triggered by Pull Requests, the string `$PR_NUMBER` will be replaced by the pull request number.  
+
 The `deploymentGroupConfig` and `deploymentConfig` keys in each of the two cases contain configuration that is passed as-is to the 
 [`CreateDeploymentGroup`](https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_CreateDeploymentGroup.html) or 
 [`UpdateDeploymentGroup`](https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_UpdateDeploymentGroup.html) API calls (for
