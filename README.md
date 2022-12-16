@@ -36,7 +36,7 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
-            -   uses: aws-actions/configure-aws-credentials@v1
+            -   uses: aws-actions/configure-aws-credentials@v2
                 with:
                     aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
                     aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
@@ -44,7 +44,7 @@ jobs:
             -   uses: actions/checkout@v2
             -   id: deploy
                 uses: webfactory/create-aws-codedeploy-deployment@v0.2.2
-            -   uses: peter-evans/commit-comment@v1
+            -   uses: peter-evans/commit-comment@v2
                 with:
                     token: ${{ secrets.GITHUB_TOKEN }}
                     body: |
