@@ -11,7 +11,7 @@ outputs:
         description: AWS CodeDeployment Deployment Group name used
 runs:
     using: 'node20'
-    main: 'dist/delete-deployment-group/index.js'
+    main: '../dist/delete-deployment-group/index.js'
 
 branding:
     icon: cast
