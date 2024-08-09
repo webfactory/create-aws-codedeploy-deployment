@@ -1,4 +1,4 @@
-name: 'webfactory/create-aws-codedeploy-deployment'
+name: 'webfactory/create-aws-codedeploy-deployment/create-deployment'
 description: 'An Action to deploy GitHub repos with AWS CodeDeploy'
 inputs:
     application:
@@ -18,7 +18,7 @@ outputs:
         description: True, if a new deployment group was created; false if an already existing group was used.
 runs:
     using: 'node20'
-    main: 'dist/index.js'
+    main: 'dist/create-deployment/index.js'
 
 branding:
     icon: cast

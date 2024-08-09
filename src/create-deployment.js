@@ -4,7 +4,7 @@
     const core = require('@actions/core');
     const github = require('@actions/github');
     const payload = github.context.payload;
-    const action = require('./create-deployment');
+    const action = require('./action');
 
     const applicationName = core.getInput('application') || payload.repository.name; // like "Hello-World"
     const fullRepositoryName = payload.repository.full_name; // like "Codertocat/Hello-World"

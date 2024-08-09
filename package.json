@@ -2,15 +2,13 @@
   "main": "index.js",
   "version": "0.1.0",
   "scripts": {
-    "build": "ncc build index.js -o dist"
+    "build": "ncc build src/create-deployment.js -o dist/create-deployment; ncc build src/delete-deployment-group.js -o dist/delete-deployment-group"
   },
   "dependencies": {
     "@actions/core": "^1.10",
     "@actions/github": "^6.0",
     "aws-sdk": "^2.1671",
-    "js-yaml": "^4.1",
-    "prompt": "https://github.com/flatiron/prompt#8d5495c84c3f433b8f26ea2798f8ba68c3656459",
-    "simple-git": "^3.25"
+    "js-yaml": "^4.1"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38"
