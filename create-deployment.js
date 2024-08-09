@@ -14,7 +14,7 @@ function fetchBranchConfig(configLookupName, core) {
             throw e;
         }
     }
-    let data = yaml.safeLoad(fileContents);
+    let data = yaml.load(fileContents);
 
     for (var prop in data.branch_config) {
         var regex = new RegExp('^' + prop + '$', 'i');
