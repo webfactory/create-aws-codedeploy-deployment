@@ -44,8 +44,6 @@ exports.deleteDeploymentGroup = async function (applicationName, branchName, pul
 
     console.log(`🎳 Using deployment group '${deploymentGroupName}'`);
 
-    return;
-
     const codeDeploy = new client();
 
     try {

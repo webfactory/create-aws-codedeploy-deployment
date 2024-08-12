@@ -14,8 +14,6 @@
     const pullRequestNumber = isPullRequest ? payload.pull_request.number : undefined;
     const configLookupName = core.getInput('config-name') || branchName;
 
-    console.log(`applicationName ${applicationName}, isPullRequest ${isPullRequest}, commitId ${commitId}, branchName ${branchName}, pullRequestNumber ${pullRequestNumber}, configLookupName ${configLookupName}`);
-
     try {
         await action.deleteDeploymentGroup(applicationName, branchName, pullRequestNumber, configLookupName, core);
     } catch (e) {

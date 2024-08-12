@@ -58161,8 +58161,6 @@ exports.deleteDeploymentGroup = async function (applicationName, branchName, pul
 
     console.log(`🎳 Using deployment group '${deploymentGroupName}'`);
 
-    return;
-
     const codeDeploy = new client();
 
     try {
@@ -60295,8 +60293,6 @@ var __webpack_exports__ = {};
     const branchName = isPullRequest ? payload.pull_request.head.ref : payload.ref.replace(/^refs\/heads\//, ''); // like "my/branch_name"
     const pullRequestNumber = isPullRequest ? payload.pull_request.number : undefined;
     const configLookupName = core.getInput('config-name') || branchName;
-
-    console.log(`applicationName ${applicationName}, isPullRequest ${isPullRequest}, commitId ${commitId}, branchName ${branchName}, pullRequestNumber ${pullRequestNumber}, configLookupName ${configLookupName}`);
 
     try {
         await action.deleteDeploymentGroup(applicationName, branchName, pullRequestNumber, configLookupName, core);
