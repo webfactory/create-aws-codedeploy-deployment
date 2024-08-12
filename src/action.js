@@ -1,5 +1,7 @@
 'use strict';
 
+const client = require("aws-sdk/clients/codedeploy");
+
 function fetchBranchConfig(configLookupName, core) {
     const fs = require('fs');
     const yaml = require('js-yaml');
@@ -14,7 +16,7 @@ function fetchBranchConfig(configLookupName, core) {
             throw e;
         }
     }
-    let data = yaml.safeLoad(fileContents);
+    let data = yaml.load(fileContents);
 
     for (var prop in data.branch_config) {
         var regex = new RegExp('^' + prop + '$', 'i');
@@ -32,6 +34,34 @@ function fetchBranchConfig(configLookupName, core) {
     process.exit();
 }
 
+exports.deleteDeploymentGroup = async function (applicationName, branchName, pullRequestNumber, configLookupName, core) {
+    const branchConfig = fetchBranchConfig(configLookupName, core);
+    const safeBranchName = branchName.replace(/[^a-z0-9-/]+/gi, '-').replace(/\/+/, '--');
+    const deploymentGroupName = (branchConfig.deploymentGroupName ?? safeBranchName).replace('$BRANCH', safeBranchName).replace('$PR_NUMBER', pullRequestNumber);
+
+    console.log(`🎳 Using deployment group '${deploymentGroupName}'`);
+
+    const codeDeploy = new client();
+
+    try {
+        core.setOutput('deploymentGroupName', deploymentGroupName);
+
+        await codeDeploy.deleteDeploymentGroup({
+            applicationName: applicationName,
+            deploymentGroupName: deploymentGroupName
+        }).promise();
+
+        console.log(`🗑️ Deleted deployment group '${deploymentGroupName}'`);
+    } catch (e) {
+        if (e.code == 'DeploymentGroupDoesNotExistException') {
+            console.log(`🤨 Deployment group '${deploymentGroupName}' does not exist`);
+        } else {
+            core.setFailed(`🌩 Unhandled exception`);
+            throw e;
+        }
+    }
+}
+
 exports.createDeployment = async function(applicationName, fullRepositoryName, branchName, pullRequestNumber, configLookupName, commitId, runNumber, skipSequenceCheck, core) {
     const branchConfig = fetchBranchConfig(configLookupName, core);
     const safeBranchName = branchName.replace(/[^a-z0-9-/]+/gi, '-').replace(/\/+/, '--');
@@ -41,7 +71,6 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
 
     console.log(`🎳 Using deployment group '${deploymentGroupName}'`);
 
-    const client = require('aws-sdk/clients/codedeploy');
     const codeDeploy = new client();
 
     try {

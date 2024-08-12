@@ -41,9 +41,9 @@ jobs:
                     aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
                     aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
                     aws-region: eu-central-1
-            -   uses: actions/checkout@v2
+            -   uses: actions/checkout@v4
             -   id: deploy
-                uses: webfactory/create-aws-codedeploy-deployment@v0.2.2
+                uses: webfactory/create-aws-codedeploy-deployment/create-deployment@v0.5.0
             -   uses: peter-evans/commit-comment@v2
                 with:
                     token: ${{ secrets.GITHUB_TOKEN }}
@@ -116,7 +116,7 @@ The only addition made will be that the `revision` parameter for `CreateDeployme
 2. Connect your CodeDeploy Application with your repository following [these instructions](https://docs.aws.amazon.com/codedeploy/latest/userguide/deployments-create-cli-github.html).
 3. Configure the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action in your workflow and provide the necessary IAM credentials as secrets. See the section below for the necessary IAM permissions.
 4. Add the `branch_config` section to your `appspec.yml` file to map branches to Deployment Groups and their configuration. In the above example, the  `master` and `.*` sub-sections show the minimal configuration required.
-5. Add `uses: webfactory/create-aws-codedeploy-deployment@v0.1.0` as a step to your workflow file. If you want to use the action's outputs, you will also need to provide an `id` for the step.
+5. Add `uses: webfactory/create-aws-codedeploy-deployment/create-deployment@v0.5.0` as a step to your workflow file. If you want to use the action's outputs, you will also need to provide an `id` for the step.
 
 ### AWS IAM Permissions
 
@@ -138,7 +138,8 @@ The IAM User that is used to run the action requires the following IAM permissio
                 "codedeploy:GetDeploymentConfig",
                 "codedeploy:GetDeploymentGroup",
                 "codedeploy:UpdateDeploymentGroup",
-                "codedeploy:CreateDeploymentGroup"
+                "codedeploy:CreateDeploymentGroup",
+                "codedeploy:DeleteDeploymentGroup"
             ],
             "Resource": [
                 "arn:aws:iam::{your_account_id}:role/{your_codedeploy_service_role}",
@@ -177,6 +178,34 @@ This workaround should catch a good share of possible out-of-order deployments. 
 
 You can use the expression `if: steps.<your-deployment-step>.outputs.deploymentGroupCreated==true` (or `...==false`) on subsequent workflow steps to run actions only if the deployment created a new deployment group (or updated an existing deployment, respectively).
 
+## Cleaning Up
+
+Sooner or later you might want to get rid of the CodeDeploy Deployment Groups created by this action. For example, when you create deployments for pull requests opened in a repo, you might want to delete those once the PR has been closed or merged.
+
+To help you with this, a second action is included in this repo that can delete Deployment Groups, and uses the same rules to derive the group name as described above.
+
+Here is an example workflow that runs for closed pull requests:
+
+```yaml
+# .github/workflows/cleanup-deployment-groups.yml
+on:
+    pull_request:
+        types:
+            - closed
+
+jobs:
+    deployment:
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: aws-actions/configure-aws-credentials@v2
+                with:
+                    aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+                    aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+                    aws-region: eu-central-1
+            -   uses: actions/checkout@v4
+            -   uses: webfactory/create-aws-codedeploy-deployment/delete-deployment-group@v0.5.0
+```
+
 ## Hacking
 
 As a note to my future self, in order to work on this repo:
@@ -197,4 +226,4 @@ If you're a developer looking for new challenges, we'd like to hear from you! Ot
 - <https://www.webfactory.de>
 - <https://twitter.com/webfactory>
 
-Copyright 2020 - 2022 webfactory GmbH, Bonn. Code released under [the MIT license](LICENSE).
+Copyright 2020 - 2024 webfactory GmbH, Bonn. Code released under [the MIT license](LICENSE).

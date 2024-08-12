@@ -1,0 +1,18 @@
+name: 'webfactory/create-aws-codedeploy-deployment/delete-deployment-group'
+description: 'Delete an AWS CodeDeploy deployment group, e. g. after a PR has been closed'
+inputs:
+    application:
+        description: 'AWS CodeDeploy application name; defaults to short repository name'
+    config-name:
+        description: 'Override name to look up branch_config; default is to use the current branch name.'
+        default: ''
+outputs:
+    deploymentGroupName:
+        description: AWS CodeDeployment Deployment Group name used
+runs:
+    using: 'node20'
+    main: '../dist/delete-deployment-group/index.js'
+
+branding:
+    icon: cast
+    color: orange
