@@ -36,7 +36,7 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
-            -   uses: aws-actions/configure-aws-credentials@v2
+            -   uses: aws-actions/configure-aws-credentials@v4
                 with:
                     aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
                     aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
@@ -197,7 +197,7 @@ jobs:
     deployment:
         runs-on: ubuntu-latest
         steps:
-            -   uses: aws-actions/configure-aws-credentials@v2
+            -   uses: aws-actions/configure-aws-credentials@v4
                 with:
                     aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
                     aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
