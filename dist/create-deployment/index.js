@@ -58333,13 +58333,11 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 try {
                     await waitUntilDeploymentSuccessful({
                         client: codeDeploy,
-                        minDelay: 5,
-                        maxWaitTime: 10,
+                        maxWaitTime: 600,
                     }, {deploymentId: otherDeployment});
                     console.log(`🙂 The pending deployment ${otherDeployment} sucessfully finished.`);
                 } catch (e) {
                     console.log(`🤔 The other pending deployment ${otherDeployment} seems to have failed.`);
-                    throw e;
                 }
                 continue;
             } else {
@@ -58354,8 +58352,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
     try {
         await waitUntilDeploymentSuccessful({
             client: codeDeploy,
-            minDelay: 5,
-            maxWaitTime: 10,
+            maxWaitTime: 600,
         }, {deploymentId: deploymentId});
         console.log('🥳 Deployment successful');
     } catch (e) {
