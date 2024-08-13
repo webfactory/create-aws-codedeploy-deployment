@@ -1,6 +1,10 @@
 'use strict';
 
-const client = require("aws-sdk/clients/codedeploy");
+const {
+    CodeDeploy: client,
+    waitUntilDeploymentSuccessful,
+} = require('@aws-sdk/client-codedeploy');
+const {normalizeProvider} = require("@smithy/util-middleware");
 
 function fetchBranchConfig(configLookupName, core) {
     const fs = require('fs');
@@ -49,11 +53,11 @@ exports.deleteDeploymentGroup = async function (applicationName, branchName, pul
         await codeDeploy.deleteDeploymentGroup({
             applicationName: applicationName,
             deploymentGroupName: deploymentGroupName
-        }).promise();
+        });
 
         console.log(`🗑️ Deleted deployment group '${deploymentGroupName}'`);
     } catch (e) {
-        if (e.code == 'DeploymentGroupDoesNotExistException') {
+        if (e.name == 'DeploymentGroupDoesNotExistException') {
             console.log(`🤨 Deployment group '${deploymentGroupName}' does not exist`);
         } else {
             core.setFailed(`🌩 Unhandled exception`);
@@ -80,19 +84,19 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 applicationName: applicationName,
                 currentDeploymentGroupName: deploymentGroupName
             }
-        }).promise();
+        });
         console.log(`⚙️  Updated deployment group '${deploymentGroupName}'`);
 
         core.setOutput('deploymentGroupCreated', 0);
     } catch (e) {
-        if (e.code == 'DeploymentGroupDoesNotExistException') {
+        if (e.name == 'DeploymentGroupDoesNotExistException') {
             await codeDeploy.createDeploymentGroup({
                 ...deploymentGroupConfig,
                 ...{
                     applicationName: applicationName,
                     deploymentGroupName: deploymentGroupName,
                 }
-            }).promise();
+            });
             console.log(`🎯 Created deployment group '${deploymentGroupName}'`);
 
             core.setOutput('deploymentGroupCreated', 1);
@@ -116,12 +120,12 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
             var {deploymentGroupInfo: {lastAttemptedDeployment: {deploymentId: lastAttemptedDeploymentId} = {}}} = await codeDeploy.getDeploymentGroup({
                 applicationName: applicationName,
                 deploymentGroupName: deploymentGroupName,
-            }).promise();
+            });
 
             if (lastAttemptedDeploymentId) {
                 var {deploymentInfo: {description: lastAttemptedDeploymentDescription}} = await codeDeploy.getDeployment({
                     deploymentId: lastAttemptedDeploymentId,
-                }).promise();
+                });
 
                 var matches, lastAttemptedDeploymentRunNumber;
 
@@ -160,13 +164,14 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                         }
                     }
                 }
-            }).promise();
-            console.log(`🚚️ Created deployment ${deploymentId} – https://console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=${codeDeploy.config.region}`);
+            });
+            const region = await normalizeProvider(codeDeploy.config.region)();
+            console.log(`🚚️ Created deployment ${deploymentId} – https://console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=${region}`);
             core.setOutput('deploymentId', deploymentId);
             core.setOutput('deploymentGroupName', deploymentGroupName);
             break;
         } catch (e) {
-            if (e.code == 'DeploymentLimitExceededException') {
+            if (e.name == 'DeploymentLimitExceededException') {
                 let message = e.message.toString();
                 let found = message.match(/(?:is already deploying|already has an active Deployment) \'(d-\w+)\'/);
 
@@ -179,7 +184,10 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 let [, otherDeployment] = found;
                 console.log(`😶 Waiting for another pending deployment ${otherDeployment}`);
                 try {
-                    await codeDeploy.waitFor('deploymentSuccessful', {deploymentId: otherDeployment}).promise();
+                    await waitUntilDeploymentSuccessful({
+                        client: codeDeploy,
+                        maxWaitTime: 600,
+                    }, {deploymentId: otherDeployment});
                     console.log(`🙂 The pending deployment ${otherDeployment} sucessfully finished.`);
                 } catch (e) {
                     console.log(`🤔 The other pending deployment ${otherDeployment} seems to have failed.`);
@@ -195,9 +203,13 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
     console.log(`⏲  Waiting for deployment ${deploymentId} to finish`);
 
     try {
-        await codeDeploy.waitFor('deploymentSuccessful', {deploymentId: deploymentId}).promise();
+        await waitUntilDeploymentSuccessful({
+            client: codeDeploy,
+            maxWaitTime: 600,
+        }, {deploymentId: deploymentId});
         console.log('🥳 Deployment successful');
     } catch (e) {
         core.setFailed(`😱 The deployment ${deploymentId} seems to have failed.`);
+        throw e;
     }
 }
