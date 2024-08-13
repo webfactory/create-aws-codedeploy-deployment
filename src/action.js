@@ -4,6 +4,7 @@ const {
     CodeDeploy: client,
     waitUntilDeploymentSuccessful,
 } = require('@aws-sdk/client-codedeploy');
+const {normalizeProvider} = require("@smithy/util-middleware");
 
 function fetchBranchConfig(configLookupName, core) {
     const fs = require('fs');
@@ -164,7 +165,8 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                     }
                 }
             });
-            console.log(`🚚️ Created deployment ${deploymentId} – https://console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=${codeDeploy.config.region}`);
+            const region = await normalizeProvider(codeDeploy.config.region)();
+            console.log(`🚚️ Created deployment ${deploymentId} – https://console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=${region}`);
             core.setOutput('deploymentId', deploymentId);
             core.setOutput('deploymentGroupName', deploymentGroupName);
             break;
@@ -189,6 +191,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                     console.log(`🙂 The pending deployment ${otherDeployment} sucessfully finished.`);
                 } catch (e) {
                     console.log(`🤔 The other pending deployment ${otherDeployment} seems to have failed.`);
+                    throw e;
                 }
                 continue;
             } else {
@@ -208,5 +211,6 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
         console.log('🥳 Deployment successful');
     } catch (e) {
         core.setFailed(`😱 The deployment ${deploymentId} seems to have failed.`);
+        throw e;
     }
 }

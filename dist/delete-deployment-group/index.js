@@ -58151,6 +58151,7 @@ const {
     CodeDeploy: client,
     waitUntilDeploymentSuccessful,
 } = __nccwpck_require__(6692);
+const {normalizeProvider} = __nccwpck_require__(2390);
 
 function fetchBranchConfig(configLookupName, core) {
     const fs = __nccwpck_require__(7147);
@@ -58311,7 +58312,8 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                     }
                 }
             });
-            console.log(`🚚️ Created deployment ${deploymentId} – https://console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=${codeDeploy.config.region}`);
+            const region = await normalizeProvider(codeDeploy.config.region)();
+            console.log(`🚚️ Created deployment ${deploymentId} – https://console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=${region}`);
             core.setOutput('deploymentId', deploymentId);
             core.setOutput('deploymentGroupName', deploymentGroupName);
             break;
@@ -58336,6 +58338,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                     console.log(`🙂 The pending deployment ${otherDeployment} sucessfully finished.`);
                 } catch (e) {
                     console.log(`🤔 The other pending deployment ${otherDeployment} seems to have failed.`);
+                    throw e;
                 }
                 continue;
             } else {
@@ -58355,6 +58358,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
         console.log('🥳 Deployment successful');
     } catch (e) {
         core.setFailed(`😱 The deployment ${deploymentId} seems to have failed.`);
+        throw e;
     }
 }
 
