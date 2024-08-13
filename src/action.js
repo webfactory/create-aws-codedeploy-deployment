@@ -186,6 +186,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
                 try {
                     await waitUntilDeploymentSuccessful({
                         client: codeDeploy,
+                        minDelay: 5,
                         maxWaitTime: 10,
                     }, {deploymentId: otherDeployment});
                     console.log(`🙂 The pending deployment ${otherDeployment} sucessfully finished.`);
@@ -206,6 +207,7 @@ exports.createDeployment = async function(applicationName, fullRepositoryName, b
     try {
         await waitUntilDeploymentSuccessful({
             client: codeDeploy,
+            minDelay: 5,
             maxWaitTime: 10,
         }, {deploymentId: deploymentId});
         console.log('🥳 Deployment successful');
