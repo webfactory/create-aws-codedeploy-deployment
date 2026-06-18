@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "1.0.0",
   "scripts": {
     "build": "ncc build src/create-deployment.cjs -o dist/create-deployment; ncc build src/delete-deployment-group.cjs -o dist/delete-deployment-group"
   },

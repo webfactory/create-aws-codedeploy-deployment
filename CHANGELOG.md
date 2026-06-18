@@ -1,5 +1,11 @@
 # create-aws-codedeploy-deployment Action Changelog
 
+## Version v1.0.0
+
+- Switch to Node.js v24 runtime
+- Bump `@actions/core` to v3.x, `@actions/github` to v9.x, `@vercel/ncc` to v0.44, `js-yaml` to v4.2, `@aws-sdk/client-codedeploy` to latest
+- Entry scripts renamed to `.cjs` to ensure CJS bundling with ncc when importing ESM-only packages via dynamic `import()`
+
 ## Version v0.5.1
 
 - Update action code to use the AWS JavaScript SDK v3, to make warnings about the upcoming v2 EOL go away
