@@ -224,6 +224,5 @@ This action was written by webfactory GmbH, Bonn, Germany. We're a software deve
 If you're a developer looking for new challenges, we'd like to hear from you! Otherwise, if this Action is useful for you, add a ⭐️.
 
 - <https://www.webfactory.de>
-- <https://twitter.com/webfactory>
 
-Copyright 2020 - 2024 webfactory GmbH, Bonn. Code released under [the MIT license](LICENSE).
+Copyright 2020 - 2026 webfactory GmbH, Bonn. Code released under [the MIT license](LICENSE).

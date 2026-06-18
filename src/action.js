@@ -4,7 +4,7 @@ const {
     CodeDeploy: client,
     waitUntilDeploymentSuccessful,
 } = require('@aws-sdk/client-codedeploy');
-const {normalizeProvider} = require("@smithy/util-middleware");
+const {normalizeProvider} = require("@smithy/core");
 
 function fetchBranchConfig(configLookupName, core) {
     const fs = require('fs');
